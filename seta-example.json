@@ -1,0 +1,35 @@
+{
+    "arrival": {
+        "waypont": "MO2076",
+        "services": [
+            {
+                "service": "760",
+                "arrival": "20:30",
+                "type": "planned",
+                "destination": "VIGNOLA",
+                "fleetCode": "MO",
+                "dutyId": "41893",
+                "busnum": "",
+                "serviceType": "EX",
+                "occupancyStatus": null,
+                "codice_corsa": "MO760-Di-7835-3360561",
+                "posti_totali": null,
+                "num_passeggeri": null
+            },
+            {
+                "service": "760",
+                "arrival": "20:30",
+                "type": "realtime",
+                "destination": "VIGNOLA",
+                "fleetCode": "MO",
+                "dutyId": "41893",
+                "busnum": "348",
+                "serviceType": "EX",
+                "occupancyStatus": "MANY_SEATS_AVAILABLE",
+                "codice_corsa": "MO760-Di-7835-3360561",
+                "posti_totali": 84,
+                "num_passeggeri": 8
+            }
+        ]
+    }
+}
