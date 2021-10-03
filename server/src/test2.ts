@@ -8,6 +8,7 @@ interface Settings {
     trips: Trip[];
     additionalInfo?: string;
     visibleFields?: (keyof Trip)[];
+    tripFn: (url: string) => Trip[] | string;
 }
 
 interface Trip {
@@ -35,4 +36,8 @@ interface Trip {
     additionalInfo?: string; // Scrolling text
     backgroundColor?: string; // HEX color - has no effect on LED matrix displays
     textColor?: string; // HEX color - has no effect on LED matrix displays
+}
+
+function isTrip(data: unknown): data is Trip {
+    return !!data && typeof data === "object" && (data as any).shortName;
 }
