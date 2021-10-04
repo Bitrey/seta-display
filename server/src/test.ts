@@ -47,13 +47,7 @@ interface Route {
     textColor?: string; // HEX color
 }
 
-interface Trip {
-    route: string; // Possibly referencing Route.line
-}
-
-interface ResErr {
-    err: string | null;
-}
+type ResErr = { err: string | null };
 
 interface ResOk {
     tripId?: string;
