@@ -3,6 +3,7 @@ import { logger } from "./shared/logger";
 import { Trip } from "./interfaces/Trip";
 import moment from "moment-timezone";
 import { Stop } from "./interfaces/Stop";
+import { Agency } from "./interfaces/Agency";
 
 interface Seta {
     arrival: {
@@ -33,15 +34,49 @@ interface Seta {
     };
 }
 
+const stops: Stop[] = [
+    {
+        stopId: "MO10",
+        stopName: "Modena Autostazione",
+        platform: "Est."
+    },
+    {
+        stopId: "MO10",
+        stopName: "Modena Autostazione",
+        platform: "Est."
+    },
+    {
+        stopId: "MO3",
+        stopName: "Modena Autostazione",
+        platform: "1"
+    },
+    {
+        stopId: "MO2076",
+        stopName: "San Cesario"
+    }
+];
+const setaMo: Agency = {
+    lang: "it",
+    logoUrl: "https://www.setaweb.it/images/favicon/favicon.ico",
+    name: "SETA",
+    timezone: "Europe/Rome",
+    phone: "059 416711",
+    stops,
+    tripFn: getTrips,
+    url: "https://www.setaweb.it/mo/"
+};
+
 const instance = axios.create({
     baseURL: "https://avm.setaweb.it/SETA_WS/services/arrival/",
     timeout: 10000
 });
 
-async function getInfo(stop: Stop): Promise<Trip[] | { err: string }> {
+export async function getTrips(
+    stopCode: string
+): Promise<Trip[] | { err: string }> {
     let data: Seta;
     try {
-        data = (await instance.post("/" + stop.stopId)).data;
+        data = (await instance.post("/" + stopCode)).data;
         logger.debug("SETA data fetched successfully");
     } catch (err) {
         if (axios.isAxiosError(err)) {
@@ -50,7 +85,7 @@ async function getInfo(stop: Stop): Promise<Trip[] | { err: string }> {
 
             data = err.response?.data || {
                 arrival: {
-                    waypont: stop.stopId,
+                    waypont: stopCode,
                     error: "no arrivals scheduled in next 90 minutes"
                 }
             };
@@ -59,14 +94,12 @@ async function getInfo(stop: Stop): Promise<Trip[] | { err: string }> {
             logger.error(err);
             data = {
                 arrival: {
-                    waypont: stop.stopId,
+                    waypont: stopCode,
                     error: "no arrivals scheduled in next 90 minutes"
                 }
             };
         }
     }
-
-    const agencyLogo = "https://www.setaweb.it/images/favicon/favicon.ico";
 
     if (!data?.arrival || typeof data?.arrival !== "object") {
         logger.error("Bad response");
@@ -90,11 +123,17 @@ async function getInfo(stop: Stop): Promise<Trip[] | { err: string }> {
         // Skip non-realtime data
         if (i !== -1 && res[i].scheduleRelationship === "NO_DATA") {
             res.splice(i, 1);
-        } else if (i !== 1 && res[i].scheduleRelationship === "SCHEDULED") {
+        } else if (i !== -1 && res[i].scheduleRelationship === "SCHEDULED") {
             continue;
         }
-
-        const t = moment.tz(e.arrival, "HH:mm", "Europe/Rome").unix();
+        logger.debug(`${moment().tz("Europe/Rome").format("L")} ${e.arrival}`);
+        const t = moment
+            .tz(
+                `${moment().tz("Europe/Rome").format("L")} ${e.arrival}`,
+                "L HH:mm",
+                "Europe/Rome"
+            )
+            .unix();
         const r =
             e.num_passeggeri && e.posti_totali
                 ? e.num_passeggeri / e.posti_totali
@@ -110,7 +149,7 @@ async function getInfo(stop: Stop): Promise<Trip[] | { err: string }> {
                 e.type === "realtime" ? "SCHEDULED" : "NO_DATA",
             realtimeArrival: t,
             realtimeDeparture: t,
-            platform: stop.platform,
+            platform: stop.platform, // convert to class
             occupancyStatus: r
                 ? r < 0.1
                     ? "EMPTY"
@@ -126,8 +165,9 @@ async function getInfo(stop: Stop): Promise<Trip[] | { err: string }> {
                     ? "FULL"
                     : undefined
                 : undefined,
-            vehicleCode: e.busnum,
-            agencyLogo,
+            passengersNum: e.num_passeggeri || undefined,
+            maxPassengers: e.posti_totali || undefined,
+            vehicleCode: e.busnum || undefined,
             canceled: false, // doesn't support true
             // additionalInfo: undefined
             backgroundColor: e.serviceType === "EX" ? "#1267B7" : "#FFC100",
@@ -139,12 +179,7 @@ async function getInfo(stop: Stop): Promise<Trip[] | { err: string }> {
 }
 
 async function test() {
-    const s: Stop = {
-        stopId: "MO2076",
-        stopName: "San Cesario",
-        tripFn: getInfo
-    };
-    const res = await s.tripFn(s);
+    const res = await setaMo.tripFn(s);
     if (Array.isArray(res)) {
         console.log("corse", res);
     } else {
@@ -152,7 +187,7 @@ async function test() {
     }
 }
 
-test();
+// test();
 
 // const a = {
 //     arrival: {

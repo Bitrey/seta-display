@@ -17,8 +17,10 @@ export interface Trip {
         | "CRUSHED_STANDING_ROOM_ONLY"
         | "FULL"
         | "NOT_ACCEPTING_PASSENGERS";
+    passengersNum?: number;
+    maxPassengers?: number;
     vehicleCode?: string;
-    agencyLogo?: string; // Small logo (icon size)
+    // agencyLogo?: string; // Small logo (icon size)
     canceled?: boolean; // Defaults to false
     additionalInfo?: string; // Scrolling text
     backgroundColor?: string; // HEX color - has no effect on LED matrix displays

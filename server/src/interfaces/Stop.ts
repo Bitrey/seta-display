@@ -6,5 +6,4 @@ export interface Stop {
     additionalInfo?: string;
     visibleFields?: (keyof Trip)[];
     platform?: string;
-    tripFn: (stop: Stop) => Promise<Trip[] | { err: string }>;
 }
