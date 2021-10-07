@@ -1,1 +1,1 @@
-import "./seta";
+import "./test";
