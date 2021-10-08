@@ -106,8 +106,8 @@ export class Seta implements Base {
 
             // Skip non-realtime data
             if (i !== -1) {
-                scheduledDeparture = res[i].scheduledDeparture;
                 if (res[i].scheduleRelationship === "NO_DATA") {
+                    scheduledDeparture = res[i].scheduledDeparture;
                     res.splice(i, 1);
                 } else if (res[i].scheduleRelationship === "SCHEDULED") {
                     continue;
