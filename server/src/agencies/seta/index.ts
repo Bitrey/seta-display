@@ -4,7 +4,7 @@ import { logger } from "../../shared/logger";
 import { Trip } from "../../interfaces/Trip";
 import { Stop } from "../../interfaces/Stop";
 import { Agency } from "../../interfaces/Agency";
-import { tripFn } from "../../interfaces/tripFn";
+import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
 
 interface _SetaRes {
@@ -53,7 +53,7 @@ export class Seta implements Base {
         timeout: 10000
     });
 
-    public static getTrips: tripFn = async stopId => {
+    public static getTrips: tripFn = async (stopId, maxResults) => {
         const stop = Seta.stops.find(e => e.stopId === stopId);
 
         let data: _SetaRes;
@@ -102,14 +102,16 @@ export class Seta implements Base {
         for (const e of services) {
             const i = res.findIndex(m => m.tripId === e.codice_corsa);
 
+            let scheduledDeparture;
+
             // Skip non-realtime data
-            if (i !== -1 && res[i].scheduleRelationship === "NO_DATA") {
-                res.splice(i, 1);
-            } else if (
-                i !== -1 &&
-                (res[i].scheduleRelationship === "SCHEDULED" || res[i].)
-            ) {
-                continue;
+            if (i !== -1) {
+                scheduledDeparture = res[i].scheduledDeparture;
+                if (res[i].scheduleRelationship === "NO_DATA") {
+                    res.splice(i, 1);
+                } else if (res[i].scheduleRelationship === "SCHEDULED") {
+                    continue;
+                }
             }
 
             const t = moment
@@ -128,8 +130,8 @@ export class Seta implements Base {
                 shortName: e.service,
                 longName: e.destination,
                 vehicleType: 3,
-                scheduledArrival: t,
-                scheduledDeparture: t,
+                scheduledArrival: scheduledDeparture || t,
+                scheduledDeparture: scheduledDeparture || t,
                 scheduleRelationship:
                     e.type === "realtime" ? "SCHEDULED" : "NO_DATA",
                 realtimeArrival: t,
@@ -164,6 +166,12 @@ export class Seta implements Base {
             }
         }
         res.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
+        // DEBUG FAI SPLICE
+        res.slice(0, maxResults || res.length);
         return res;
     };
+
+    public static isTripsErr(r: tripFnReturn): r is tripFnErr {
+        return "err" in r;
+    }
 }

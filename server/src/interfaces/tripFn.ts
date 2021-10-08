@@ -1,6 +1,10 @@
 import { Trip } from "./Trip";
 
-interface tripFnErr {
+export interface tripFnErr {
     err: string;
 }
-export type tripFn = (stopId: string) => Promise<Trip[] | tripFnErr>;
+export type tripFnReturn = Trip[] | tripFnErr;
+export type tripFn = (
+    stopId: string,
+    maxResults?: number
+) => Promise<tripFnReturn>;
