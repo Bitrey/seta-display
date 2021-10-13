@@ -53,12 +53,10 @@ export class Seta implements Base {
         timeout: 10000
     });
 
-    public static getTrips: tripFn = async (stopId, maxResults) => {
-        const stop = Seta.stops.find(e => e.stopId === stopId);
-
+    public static getTrips: tripFn = async (stop, maxResults) => {
         let data: _SetaRes;
         try {
-            data = (await this._instance.post("/" + stopId)).data;
+            data = (await this._instance.post("/" + stop.stopId)).data;
             logger.debug("SETA data fetched successfully");
         } catch (err) {
             if (axios.isAxiosError(err)) {
@@ -67,7 +65,7 @@ export class Seta implements Base {
 
                 data = err.response?.data || {
                     arrival: {
-                        waypont: stopId,
+                        waypont: stop.stopId,
                         error: "no arrivals scheduled in next 90 minutes"
                     }
                 };
@@ -76,7 +74,7 @@ export class Seta implements Base {
                 logger.error(err);
                 data = {
                     arrival: {
-                        waypont: stopId,
+                        waypont: stop.stopId,
                         error: "no arrivals scheduled in next 90 minutes"
                     }
                 };
@@ -136,7 +134,7 @@ export class Seta implements Base {
                     e.type === "realtime" ? "SCHEDULED" : "NO_DATA",
                 realtimeArrival: t,
                 realtimeDeparture: t,
-                platform: stop?.platform, // convert to class
+                platform: stop.platform,
                 occupancyStatus: r
                     ? r < 0.1
                         ? "EMPTY"
@@ -166,9 +164,8 @@ export class Seta implements Base {
             }
         }
         res.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
-        // DEBUG FAI SPLICE
-        res.slice(0, maxResults || res.length);
-        return res;
+
+        return maxResults ? res.slice(0, maxResults) : res;
     };
 
     public static isTripsErr(r: tripFnReturn): r is tripFnErr {
