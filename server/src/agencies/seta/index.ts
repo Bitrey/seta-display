@@ -6,6 +6,8 @@ import { Stop } from "../../interfaces/Stop";
 import { Agency } from "../../interfaces/Agency";
 import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
+import { join } from "path/posix";
+import { readFileSync } from "fs";
 
 interface _SetaRes {
     arrival: {
@@ -46,7 +48,9 @@ export class Seta implements Base {
         url: "https://www.setaweb.it/mo/"
     };
 
-    public static stops: Stop[] = [];
+    public static stops: Stop[] = JSON.parse(
+        readFileSync(join(__dirname, "./stops.json"), { encoding: "utf-8" })
+    );
 
     private static _instance = axios.create({
         baseURL: "https://avm.setaweb.it/SETA_WS/services/arrival/",
@@ -90,7 +94,7 @@ export class Seta implements Base {
         const { error, services } = data.arrival;
         if (error === "no arrivals scheduled in next 90 minutes") {
             return { err: "Nessuna corsa nei prossimi 90 minuti" };
-        } else if (!Array.isArray(services)) {
+        } else if (error || !Array.isArray(services)) {
             logger.error("Bad response");
             logger.error(data);
             return { err: "Errore nel caricamento dei dati" };
