@@ -7,8 +7,11 @@ export interface IStop {
     additionalInfo?: string;
     visibleFields?: (keyof Trip)[];
     platform?: string;
+    coordX?: number;
+    coordY?: number;
     lat?: number;
     lon?: number;
+    zone?: string;
     // getTrips: (maxResults?: number) => Promise<tripFnReturn>;
 }
 
@@ -18,8 +21,11 @@ export class Stop implements IStop {
     additionalInfo?: string;
     visibleFields?: (keyof Trip)[];
     platform?: string;
+    coordX?: number;
+    coordY?: number;
     lat?: number;
     lon?: number;
+    zone?: string;
     // getTrips: (maxResults?: number) => Promise<tripFnReturn>;
 
     constructor(s: IStop) {
@@ -28,8 +34,11 @@ export class Stop implements IStop {
         this.additionalInfo = s.additionalInfo;
         this.visibleFields = s.visibleFields;
         this.platform = s.platform;
+        this.coordX = s.coordX;
+        this.coordY = s.coordY;
         this.lat = s.lat;
         this.lon = s.lon;
+        this.zone = s.zone;
         // this.getTrips = s.getTrips;
     }
 }

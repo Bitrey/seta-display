@@ -1,12 +1,11 @@
 import { Router } from "express";
 import { display } from "../..";
-import { Seta } from "../../agencies/seta";
 import { logger } from "../../shared/logger";
 export const router = Router();
 
 logger.info("Loading API routes");
 
-import { body, param, validationResult } from "express-validator";
+import { param, validationResult } from "express-validator";
 import { Stop } from "../../interfaces/Stop";
 import { lstatSync, readdirSync } from "fs";
 import { join } from "path";
@@ -64,22 +63,27 @@ router.get(
         return true;
     }),
     async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res
-                .status(400)
-                .json({ err: errors.array().map(e => e.msg) });
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res
+                    .status(400)
+                    .json({ err: errors.array().map(e => e.msg) });
+            }
+
+            const { stopId } = req.params as { stopId: string };
+            const s = display.stops.find(e => e.stopId === stopId);
+
+            const Cls = require(join(
+                fPath,
+                (req.params as { agency: string }).agency
+            ) as string).default as typeof Base;
+
+            const trips = await Cls.getTrips(s as Stop, 10);
+            return res.json(trips);
+        } catch (err) {
+            logger.error(err);
+            res.status(400).json({ err: "Error while loading data" });
         }
-
-        const { stopId } = req.params as { stopId: string };
-        const s = display.stops.find(e => e.stopId === stopId);
-
-        const Cls = require(join(
-            fPath,
-            (req.params as { agency: string }).agency
-        ) as string).default as typeof Base;
-
-        const trips = await Cls.getTrips(s as Stop, 10);
-        return res.json(trips);
     }
 );

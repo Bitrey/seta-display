@@ -6,7 +6,7 @@ import { Stop } from "../../interfaces/Stop";
 import { Agency } from "../../interfaces/Agency";
 import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
-import { join } from "path/posix";
+import { join } from "path";
 import { readFileSync } from "fs";
 
 interface _SetaRes {
@@ -48,9 +48,11 @@ export class Seta implements Base {
         url: "https://www.setaweb.it/mo/"
     };
 
-    public static stops: Stop[] = JSON.parse(
-        readFileSync(join(__dirname, "./stops.json"), { encoding: "utf-8" })
-    );
+    static get stops(): Stop[] {
+        return JSON.parse(
+            readFileSync(join(__dirname, "./stops.json"), { encoding: "utf-8" })
+        );
+    }
 
     private static _instance = axios.create({
         baseURL: "https://avm.setaweb.it/SETA_WS/services/arrival/",
