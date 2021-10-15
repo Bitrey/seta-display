@@ -8,7 +8,7 @@ function start() {
 async function getTrips(stopId) {
     const { data } = await axios.get("/api/" + stopId);
     if (data.err) {
-        console.log("Errore");
+        console.log("Errore", data.err);
     } else {
         console.log("OK!!", data);
         document.getElementById("status").textContent = JSON.stringify(

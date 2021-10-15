@@ -8,6 +8,7 @@ import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
 import { join } from "path";
 import { readFileSync } from "fs";
+import { ResErr } from "../../interfaces/ResErr";
 
 interface _SetaRes {
     arrival: {
@@ -90,16 +91,18 @@ export class Seta implements Base {
         if (!data?.arrival || typeof data?.arrival !== "object") {
             logger.error("Bad response");
             logger.error(data);
-            return { err: "Errore nel caricamento dei dati" };
+            return { err: "Error while loading data" } as ResErr;
         }
 
         const { error, services } = data.arrival;
         if (error === "no arrivals scheduled in next 90 minutes") {
-            return { err: "Nessuna corsa nei prossimi 90 minuti" };
+            return {
+                err: "No arrivals scheduled in the next 90 minutes"
+            } as ResErr;
         } else if (error || !Array.isArray(services)) {
             logger.error("Bad response");
             logger.error(data);
-            return { err: "Errore nel caricamento dei dati" };
+            return { err: "Error while loading data" } as ResErr;
         }
 
         const res: Trip[] = [];

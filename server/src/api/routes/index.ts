@@ -5,85 +5,159 @@ export const router = Router();
 
 logger.info("Loading API routes");
 
-import { param, validationResult } from "express-validator";
-import { Stop } from "../../interfaces/Stop";
+import { body, validationResult } from "express-validator";
 import { lstatSync, readdirSync } from "fs";
 import { join } from "path";
 import { Base } from "../../agencies/Base";
+import { Trip } from "../../interfaces/Trip";
+import { ResErr } from "../../interfaces/ResErr";
 
 const fPath = join(__dirname, "../../agencies");
 logger.info(`Agencies dir path is "${fPath}"`);
 
 /**
  * @swagger
- * /api/{stopId}:
- *  get:
- *    description: Changes username
+ *  components:
+ *    schemas:
+ *      StopReq:
+ *        type: object
+ *        required:
+ *          - agency
+ *          - stopId
+ *        properties:
+ *          stopId:
+ *            oneOf:
+ *              - type: string
+ *              - type: array
+ *                items:
+ *                  type: string
+ *            description: Stop code
+ *            example: MO2076
+ *          agency:
+ *            type: string
+ *            description: Name of the agency (all lowercase)
+ *            example: seta
+ */
+
+/**
+ * @openapi
+ * /api/stop:
+ *  post:
+ *    description: Fetch realtime information for a stop
  *    tags:
- *      - account
- *    parameters:
- *      - in: path
- *        name: stopId
- *        schema:
- *          type: string
- *        required: true
- *        description: stopId of the stop
- *      - in: query
- *        name: agency
- *        schema:
- *          type: string
- *        required: false
- *        description: Agency of the stop. Fetches from all agencies if not specified
+ *      - api
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/StopReq'
  *    responses:
  *      '200':
  *        description: Realtime info
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/Stop'
  *      '400':
  *        description: Bad request
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
  *      '500':
  *        description: Server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
  */
-router.get(
-    "/:agency/:stopId",
-    param("agency").isString().notEmpty().withMessage("Invalid agency"),
-    param("agency").custom(v => {
-        if (
-            !readdirSync(fPath)
-                .filter(e => lstatSync(join(fPath, e)).isDirectory())
-                .includes(v)
-        ) {
-            throw new Error("Agency not found");
-        }
-        return true;
-    }),
-    param("stopId").isString().notEmpty().withMessage("Invalid stopId"),
-    param("stopId").custom(v => {
-        if (!display.stops.find(e => e.stopId === v)) {
-            throw new Error("Stop not found");
-        }
-        return true;
-    }),
+router.post(
+    "/stop",
+    body("agency")
+        .trim()
+        .custom(v => {
+            // prettier-ignore
+            const agencyNames = readdirSync(fPath).filter(e => lstatSync(join(fPath, e)).isDirectory());
+            // prettier-ignore
+            if (!v || (typeof v !== "string" && (!Array.isArray(v) || !v.every(e => !agencyNames.includes(e))))) {
+                throw new Error("Invalid agency (must be string or array of strings)");
+            } else if (((Array.isArray(v) ? v : [v]) as string[]).every(e => !readdirSync(fPath).filter(e => lstatSync(join(fPath, e)).isDirectory()).includes(e))) {
+                throw new Error("Agency not found");
+            }
+            return true;
+        }),
+    body("stopId")
+        .trim()
+        .custom(v => {
+            // prettier-ignore
+            if (!v || (typeof v !== "string" && (!Array.isArray(v) || !v.every(e => typeof e === "string")))) {
+                throw new Error("Invalid stopId (must be string or array of strings)");
+            } else if (!display.stops.find(e => e.stopId === v)) {
+                throw new Error("Stop not found");
+            }
+            return true;
+        }),
     async (req, res) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res
-                    .status(400)
-                    .json({ err: errors.array().map(e => e.msg) });
+                return res.status(400).json({
+                    err: errors
+                        .array()
+                        .map(e => e.msg)
+                        .join(", ")
+                } as ResErr);
             }
 
-            const { stopId } = req.params as { stopId: string };
-            const s = display.stops.find(e => e.stopId === stopId);
+            const { agency, stopId } = req.body as {
+                agency: string | string[];
+                stopId: string | string[];
+            };
 
-            const Cls = require(join(
-                fPath,
-                (req.params as { agency: string }).agency
-            ) as string).default as typeof Base;
+            console.log(req.body);
 
-            const trips = await Cls.getTrips(s as Stop, 10);
-            return res.json(trips);
+            const stops = Array.isArray(stopId) ? stopId : [stopId];
+            const agencies = Array.isArray(agency) ? agency : [agency];
+
+            const trips: Trip[] = [];
+            const errs: Set<string> = new Set(); // to prevent same error
+            for (const agency of agencies) {
+                const Cls = require(join(fPath, agency)).default as typeof Base;
+                for (const _stopId of stops) {
+                    const s = display.stops.find(e => e.stopId === _stopId);
+                    if (!s) {
+                        logger.debug(
+                            "stopId " +
+                                _stopId +
+                                " of agency " +
+                                Cls.agency.name +
+                                " not found"
+                        );
+                        continue;
+                    }
+                    const t = await Cls.getTrips(s, 10);
+                    if (Cls.isTripsErr(t)) {
+                        errs.add(t.err);
+                    } else {
+                        trips.push(...t);
+                    }
+                }
+            }
+
+            trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
+            return res.json(
+                trips.length === 0
+                    ? errs.size === 0
+                        ? <ResErr>{ err: "Error while loading data" }
+                        : <ResErr>{ err: [...errs].join(", ") }
+                    : trips
+            );
         } catch (err) {
             logger.error(err);
-            res.status(400).json({ err: "Error while loading data" });
+            res.status(400).json({ err: "Error while loading data" } as ResErr);
         }
     }
 );

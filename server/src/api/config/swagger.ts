@@ -1,18 +1,18 @@
-import path, { relative } from "path";
-import { cwd } from "process";
 import swaggerJsdoc from "swagger-jsdoc";
 import { logger } from "../../shared/logger";
+
 export const options = {
     definition: {
         openapi: "3.0.0",
         info: {
             title: "TPL Display",
-            version: "1.0",
+            version: "1.0.0",
             description: "TPL Display"
         },
         servers: [
             {
-                url: "http://localhost:3000/"
+                url: "http://localhost:5000/",
+                description: "Documentazione API"
             }
         ]
     },
@@ -20,13 +20,10 @@ export const options = {
     apis: [
         // path.join(__dirname, "/../routes") + "*.js",
         // path.join(__dirname, "/../routes") + "*.ts",
-        path.join(__dirname, "/../../") + "*.js",
-        path.join(__dirname, "/../../") + "*.ts"
+        "**/*.ts"
     ]
 };
 
-logger.debug(
-    `APIs path at "${options.apis.map(e => relative(cwd(), e)).join('", "')}"`
-);
+logger.info(`APIs path at "${options.apis.join('", "')}"`);
 
 export const specs = swaggerJsdoc(options);

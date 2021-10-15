@@ -4,7 +4,7 @@ import Timetable from "./Timetable";
 function App() {
     return (
         <div className="App">
-            <Timetable stop="MO3" />
+            <Timetable agency="seta" stopId="MO3" />
         </div>
     );
 }

@@ -1,12 +1,20 @@
+import bodyParser from "body-parser";
 import express from "express";
 import { join } from "path";
 import swaggerUi from "swagger-ui-express";
+import { ResErr } from "../interfaces/ResErr";
 
 import { logger } from "../shared/logger";
 import { specs } from "./config/swagger";
 import { router as routes } from "./routes";
 
 const app = express();
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// parse application/json
+app.use(bodyParser.json());
 
 // Swagger
 if (process.env.NODE_ENV !== "production") {
@@ -28,9 +36,9 @@ app.get("/", (req, res) => {
 });
 
 app.all("*", (req, res) => {
-    res.sendStatus(404);
+    res.status(404).json({ err: "Not found" } as ResErr);
 });
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 5000;
 const IP = process.env.IP || "127.0.0.1";
 app.listen(PORT, IP, () => logger.info(`API server started at ${IP}:${PORT}`));

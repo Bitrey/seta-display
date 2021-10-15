@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import PropTypes from "prop-types";
 import axios from "axios";
+// import PropTypes from "prop-types";
 
 /*
 export interface Trip {
@@ -25,7 +25,6 @@ export interface Trip {
     passengersNum?: number;
     maxPassengers?: number;
     vehicleCode?: string;
-    // agencyLogo?: string; // Small logo (icon size)
     canceled?: boolean; // Defaults to false
     additionalInfo?: string; // Scrolling text
     backgroundColor?: string; // HEX color - has no effect on LED matrix displays
@@ -34,21 +33,26 @@ export interface Trip {
 */
 
 class Timetable extends Component {
-    static propTypes = {
-        stop: PropTypes.string
-    };
-    // static defaultProps = {
-    //   stop: null
-    // }
+    // static propTypes = {
+    //     agency: PropTypes.oneOf([
+    //         PropTypes.string,
+    //         PropTypes.arrayOf(PropTypes.string)
+    //     ]).isRequired,
+    //     stopId: PropTypes.oneOf([
+    //         PropTypes.string,
+    //         PropTypes.arrayOf(PropTypes.string)
+    //     ]).isRequired
+    // };
 
     state /*: { trips: Trip[] | null }*/ = {
         trips: null
     };
 
     async componentDidMount() {
-        const url = "/api/" + this.props.stop;
-        console.log(`fetcho ${url}`);
-        const { data } = await axios.get(url);
+        const { data } = await axios.post("/api", {
+            agency: this.props.agency,
+            stopId: this.props.stopId
+        });
         console.log(data);
         this.setState({ trips: data });
     }
