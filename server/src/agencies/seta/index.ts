@@ -176,3 +176,5 @@ export class Seta implements Base {
         return "err" in r;
     }
 }
+
+export default Seta;
