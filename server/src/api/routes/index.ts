@@ -81,10 +81,13 @@ router.post(
         .custom(v => {
             // prettier-ignore
             const agencyNames = readdirSync(fPath).filter(e => lstatSync(join(fPath, e)).isDirectory());
+            try {
+                v = JSON.parse(v);
+            } catch (err) {}
             // prettier-ignore
-            if (!v || (typeof v !== "string" && (!Array.isArray(v) || !v.every(e => !agencyNames.includes(e))))) {
+            if (!v || (typeof v !== "string" && (!Array.isArray(v) || v.some(u => !u)))) {
                 throw new Error("Invalid agency (must be string or array of strings)");
-            } else if (((Array.isArray(v) ? v : [v]) as string[]).every(e => !readdirSync(fPath).filter(e => lstatSync(join(fPath, e)).isDirectory()).includes(e))) {
+            } else if ((Array.isArray(v) ? v : [v]).some(u => !agencyNames.includes(u))) {
                 throw new Error("Agency not found");
             }
             return true;
@@ -92,10 +95,13 @@ router.post(
     body("stopId")
         .trim()
         .custom(v => {
+            try {
+                v = JSON.parse(v);
+            } catch (err) {}
             // prettier-ignore
-            if (!v || (typeof v !== "string" && (!Array.isArray(v) || !v.every(e => typeof e === "string")))) {
+            if (!v || (typeof v !== "string" && (!Array.isArray(v) || v.some(e => !e)))) {
                 throw new Error("Invalid stopId (must be string or array of strings)");
-            } else if (!display.stops.find(e => e.stopId === v)) {
+            } else if ((Array.isArray(v) ? v : [v]).some(u => !display.stops.find(e => e.stopId === u))) {
                 throw new Error("Stop not found");
             }
             return true;
@@ -112,12 +118,18 @@ router.post(
                 } as ResErr);
             }
 
-            const { agency, stopId } = req.body as {
+            let { agency, stopId } = req.body as {
                 agency: string | string[];
                 stopId: string | string[];
             };
 
-            console.log(req.body);
+            try {
+                agency = JSON.parse(agency as any);
+            } catch (err) {}
+
+            try {
+                stopId = JSON.parse(stopId as any);
+            } catch (err) {}
 
             const stops = Array.isArray(stopId) ? stopId : [stopId];
             const agencies = Array.isArray(agency) ? agency : [agency];

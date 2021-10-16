@@ -45,16 +45,27 @@ class Timetable extends Component {
     // };
 
     state /*: { trips: Trip[] | null }*/ = {
-        trips: null
+        trips: null,
+        err: null
     };
 
     async componentDidMount() {
-        const { data } = await axios.post("/api", {
-            agency: this.props.agency,
-            stopId: this.props.stopId
-        });
-        console.log(data);
-        this.setState({ trips: data });
+        try {
+            console.log(this.props);
+            const res = await axios.post("/api/stop", {
+                agency: this.props.agency,
+                stopId: this.props.stopId
+            });
+            this.setState({ trips: res.data });
+        } catch (err) {
+            if (err?.response?.data?.err) {
+                this.setState({ err: err.response.data.err });
+                console.log(this.state.err);
+            } else {
+                this.setState({ err: "Unknown error" });
+                console.error(err);
+            }
+        }
     }
 
     render() {
@@ -62,7 +73,9 @@ class Timetable extends Component {
             <div>
                 <pre>
                     <code>
-                        {this.state.trips
+                        {this.state.err
+                            ? JSON.stringify(this.state.err)
+                            : this.state.trips
                             ? JSON.stringify(this.state.trips, null, 4)
                             : "caricamento..."}
                     </code>
