@@ -4,7 +4,7 @@ import Timetable from "./components/Timetable";
 function App() {
     return (
         <div className="App">
-            <Timetable agency={'["seta"]'} stopId={'["MO2076", "MO3"]'} />
+            <Timetable agency={'["seta"]'} stopId={'["MO2076", "MO6102"]'} />
         </div>
     );
 }
