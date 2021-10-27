@@ -4,7 +4,8 @@ export const router = Router();
 
 logger.info("Loading API routes");
 
-import { stopReqController } from "../controllers";
+import { stopController } from "../controllers/stop";
+import { timeController } from "../controllers/time";
 
 /**
  * @swagger
@@ -65,4 +66,69 @@ import { stopReqController } from "../controllers";
  *            schema:
  *              $ref: '#/components/schemas/ResErr'
  */
-router.post("/stop", stopReqController);
+router.post("/stop", stopController);
+
+/**
+ * @swagger
+ *  components:
+ *    schemas:
+ *      TimeReq:
+ *        type: object
+ *        required:
+ *          - agency
+ *        properties:
+ *          agency:
+ *            type: string
+ *            description: Agency - needed in order to get the correct timezone
+ *            example: seta
+ *          format:
+ *            type: string
+ *            description: Moment.js time format
+ *            example: hh:mm
+ */
+
+/**
+ * @swagger
+ *  components:
+ *    schemas:
+ *      TimeRes:
+ *        type: object
+ *        required:
+ *          - time
+ *        properties:
+ *          time:
+ *            type: string
+ *            description: Formatted time
+ *            example: MO2076
+ */
+
+/**
+ * @openapi
+ * /api/time:
+ *  post:
+ *    description: Fetch current time on the server
+ *    tags:
+ *      - api
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/TimeReq'
+ *    responses:
+ *      '200':
+ *        description: Current time
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/TimeRes'
+ *      '500':
+ *        description: Server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
+ */
+router.post("/time", timeController);

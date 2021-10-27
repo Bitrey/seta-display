@@ -1,5 +1,5 @@
-import { RequestHandler, Router } from "express";
-import * as core from "express-serve-static-core";
+import { RequestHandler } from "express";
+import core from "express-serve-static-core";
 import { ParsedQs } from "qs";
 
 export type HttpController = (

@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import axios from "axios";
+import moment from "moment-timezone";
 // import PropTypes from "prop-types";
 
 /*
@@ -70,16 +71,21 @@ class Timetable extends Component {
 
     render() {
         return (
-            <div>
-                <pre>
-                    <code>
-                        {this.state.err
-                            ? JSON.stringify(this.state.err)
-                            : this.state.trips
-                            ? JSON.stringify(this.state.trips, null, 4)
-                            : "caricamento..."}
-                    </code>
-                </pre>
+            <div
+                className={
+                    "text-yellow-200 w-full p-4 " + (this.props.className || "")
+                }
+            >
+                <div className="flex justify-between">
+                    <div className="flex flex-col">
+                        <p className="text-xl">Ti trovi alla fermata</p>
+                        <p className="text-5xl">San Cesario</p>
+                    </div>
+                    <div className="flex flex-col text-right">
+                        <p className="text-xl">27/10/2021</p>
+                        <p className="text-5xl">10:25</p>
+                    </div>
+                </div>
             </div>
         );
     }
