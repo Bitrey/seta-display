@@ -61,11 +61,11 @@ class Timetable extends Component {
         } catch (err) {
             if (err?.response?.data?.err) {
                 this.setState({ err: err.response.data.err });
-                console.log(this.state.err);
             } else {
                 this.setState({ err: "Unknown error" });
                 console.error(err);
             }
+            console.log(this.state.err);
         }
     }
 

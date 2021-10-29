@@ -2,6 +2,7 @@ import bodyParser from "body-parser";
 import express, { ErrorRequestHandler } from "express";
 import { join } from "path";
 import swaggerUi from "swagger-ui-express";
+import { CustomErr } from "../interfaces/CustomErr";
 import { ResErr } from "../interfaces/ResErr";
 
 import { logger } from "../shared/logger";
@@ -39,10 +40,6 @@ app.all("*", (req, res) => {
     res.status(404).json({ err: "Not found" } as ResErr);
 });
 
-interface CustomErr {
-    msg: string;
-    status: number;
-}
 const isCustomErr = (err: unknown): err is CustomErr => {
     return (
         !!err &&

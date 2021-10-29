@@ -6,7 +6,6 @@ import { join } from "path";
 import { logger } from "../../../shared/logger";
 import { stopService } from "../../services/stop";
 import { getAgencyNames } from "../../shared/getAgencyNames";
-import { getAllStops } from "../../shared/getAllStops";
 
 const fPath = join(__dirname, "../../agencies");
 logger.info(`Agencies dir path is "${fPath}"`);
@@ -44,22 +43,23 @@ export const stopSchema = Joi.object({
         Joi.string()
             .min(1)
             .required()
-            .custom((v, helper) => {
-                try {
-                    v = JSON.parse(v);
-                } catch (err) {}
+            // this takes too much, check if stops exist in service
+            // .custom((v, helper) => {
+            //     try {
+            //         v = JSON.parse(v);
+            //     } catch (err) {}
 
-                if (
-                    !getAllStops()
-                        // (console.log(Joi.ref("agencies")), undefined)
-                        // Joi.ref("agencies").toString())
-                        .map(e => e.stopId)
-                        .includes(v)
-                ) {
-                    return helper.error("any.error");
-                }
-                return true;
-            })
+            //     if (
+            //         !getAllStops()
+            //             // (console.log(Joi.ref("agencies")), undefined)
+            //             // Joi.ref("agencies").toString())
+            //             .map(e => e.stopId.toString())
+            //             .includes(v.toString())
+            //     ) {
+            //         return helper.error("any.error");
+            //     }
+            //     return true;
+            // })
             .messages({
                 "string.min": "format must be at least 1 character long",
                 "any.required": "stops field is required",
@@ -86,7 +86,9 @@ export const stopController = async (
         stopId = JSON.parse(stopId as string);
     } catch (err) {}
 
-    const stops = Array.isArray(stopId) ? stopId : [stopId];
+    const stops = (Array.isArray(stopId) ? stopId : [stopId]).map(e =>
+        e.toString()
+    );
     const agencies = Array.isArray(agency) ? agency : [agency];
 
     const { error } = stopSchema.validate({ stops, agencies });
@@ -96,7 +98,7 @@ export const stopController = async (
 
     const { trips, err } = await stopService({ stops, agencies });
     if (err) {
-        return next({ msg: err, status: 500 });
+        return next({ msg: err.msg, status: err.status });
     }
 
     res.json(trips);
