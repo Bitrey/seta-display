@@ -1,4 +1,6 @@
 // // import "./test";
+import dotenv from "dotenv";
+dotenv.config();
 // import { Seta } from "./agencies/seta";
 import "./api";
 // import { Display } from "./interfaces/Display";
