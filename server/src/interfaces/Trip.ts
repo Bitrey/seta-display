@@ -25,4 +25,6 @@ export interface Trip {
     additionalInfo?: string; // Scrolling text
     backgroundColor?: string; // HEX color - has no effect on LED matrix displays
     textColor?: string; // HEX color - has no effect on LED matrix displays
+
+    minTillArrival?: number; // for stupid devices
 }

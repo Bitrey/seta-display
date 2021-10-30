@@ -75,13 +75,12 @@ export class Tper implements Base {
             else throw new Error("Invalid TperHellobus response");
             trips = xmlStr.split(", ").map(e => {
                 const s = e.split(" ");
-                const time = moment
-                    .tz(
-                        `${moment().tz("Europe/Rome").format("L")} ${s[2]}`,
-                        "L HH:mm",
-                        "Europe/Rome"
-                    )
-                    .unix();
+                const _t = moment.tz(
+                    `${moment().tz("Europe/Rome").format("L")} ${s[2]}`,
+                    "L HH:mm",
+                    "Europe/Rome"
+                );
+                const time = _t.unix();
                 const t: Trip = {
                     shortName: s[0],
                     longName: "",
@@ -91,7 +90,9 @@ export class Tper implements Base {
                     scheduledDeparture: time,
                     vehicleType: 3,
                     scheduleRelationship:
-                        s[1] === "Previsto" ? "NO_DATA" : "SCHEDULED"
+                        s[1] === "Previsto" ? "NO_DATA" : "SCHEDULED",
+
+                    minTillArrival: _t.diff(moment(), "minutes")
                 };
                 return t;
             });

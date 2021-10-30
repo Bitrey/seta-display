@@ -121,13 +121,12 @@ export class Seta implements Base {
                 }
             }
 
-            const t = moment
-                .tz(
-                    `${moment().tz("Europe/Rome").format("L")} ${e.arrival}`,
-                    "L HH:mm",
-                    "Europe/Rome"
-                )
-                .unix();
+            const _t = moment.tz(
+                `${moment().tz("Europe/Rome").format("L")} ${e.arrival}`,
+                "L HH:mm",
+                "Europe/Rome"
+            );
+            const t = _t.unix();
             const r =
                 e.num_passeggeri && e.posti_totali
                     ? e.num_passeggeri / e.posti_totali
@@ -165,7 +164,8 @@ export class Seta implements Base {
                 canceled: false, // doesn't support true
                 // additionalInfo: undefined
                 backgroundColor: e.serviceType === "EX" ? "#1267B7" : "#FFC100",
-                textColor: "#FFFFFF"
+                textColor: "#FFFFFF",
+                minTillArrival: _t.diff(moment(), "minutes")
             };
 
             if (trip.realtimeArrival >= Base.getTime().unix()) {
