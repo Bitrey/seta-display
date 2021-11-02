@@ -52,8 +52,10 @@ const isCustomErr = (err: unknown): err is CustomErr => {
 // Error handler
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     if (isCustomErr(err)) {
+        logger.debug("Custom error: " + err.msg);
         return res.status(err.status).json({ err: err.msg });
     } else {
+        logger.debug("NOT custom error: " + err);
         return res.status(400).json(err);
     }
 };
