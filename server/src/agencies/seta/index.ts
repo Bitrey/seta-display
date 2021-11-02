@@ -8,7 +8,6 @@ import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
 import { join } from "path";
 import { readFileSync } from "fs";
-import { ResErr } from "../../interfaces/ResErr";
 
 interface _SetaRes {
     arrival: {
@@ -43,7 +42,7 @@ export class Seta implements Base {
     public static agency: Agency = {
         lang: "it",
         logoUrl: "https://www.setaweb.it/images/favicon/favicon.ico",
-        name: "SETA",
+        name: "SETA spa",
         timezone: "Europe/Rome",
         phone: "059 416711",
         url: "https://www.setaweb.it/mo/"
@@ -64,7 +63,7 @@ export class Seta implements Base {
         let data: _SetaRes;
         try {
             data = (await this._instance.post("/" + stop.stopId)).data;
-            logger.debug("SETA data fetched successfully");
+            logger.debug(`SETA data fetched for stop ${stop.stopId}`);
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 logger.debug("SETA data axios error:");
@@ -91,18 +90,22 @@ export class Seta implements Base {
         if (!data?.arrival || typeof data?.arrival !== "object") {
             logger.error("Bad response");
             logger.error(data);
-            return { err: "Error while loading data" } as ResErr;
+            return { err: { msg: "Error while loading data", status: 500 } };
         }
 
         const { error, services } = data.arrival;
         if (error === "no arrivals scheduled in next 90 minutes") {
+            logger.debug("SETA no arrivals");
             return {
-                err: "No arrivals scheduled in the next 90 minutes"
-            } as ResErr;
+                err: {
+                    msg: "No arrivals scheduled in the next 90 minutes",
+                    status: 204
+                }
+            };
         } else if (error || !Array.isArray(services)) {
             logger.error("Bad response");
             logger.error(data);
-            return { err: "Error while loading data" } as ResErr;
+            return { err: { msg: "Error while loading data", status: 500 } };
         }
 
         const res: Trip[] = [];

@@ -18,6 +18,11 @@ import { Trip } from "./Trip";
  *            type: string
  *            description: Name of the stop
  *            example: San Cesario
+ *          routes:
+ *            type: array
+ *            items:
+ *              type: string
+ *            description: Routes that stop here
  *          additionalInfo:
  *            type: string
  *            description: Additional information to print on the display
@@ -44,6 +49,7 @@ import { Trip } from "./Trip";
 export interface IStop {
     stopId: string;
     stopName: string;
+    routes?: string[];
     additionalInfo?: string;
     platform?: string;
     coordX?: number;
@@ -56,6 +62,7 @@ export interface IStop {
 export class Stop implements IStop {
     stopId: string;
     stopName: string;
+    routes?: string[];
     additionalInfo?: string;
     visibleFields?: (keyof Trip)[];
     platform?: string;
@@ -68,6 +75,7 @@ export class Stop implements IStop {
     constructor(s: IStop) {
         this.stopId = s.stopId;
         this.stopName = s.stopName;
+        this.routes = s.routes;
         this.additionalInfo = s.additionalInfo;
         this.platform = s.platform;
         this.coordX = s.coordX;

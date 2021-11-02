@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { Axios, AxiosResponse } from "axios";
 import { readFileSync } from "fs";
 import { logger } from "../../shared/logger";
 import { Stop } from "../../interfaces/Stop";
@@ -19,7 +19,7 @@ export class Tper implements Base {
     public static agency: Agency = {
         lang: "it",
         logoUrl: "https://solweb.tper.it/resources/images/logo-t.png",
-        name: "TPER",
+        name: "TPER spa",
         timezone: "Europe/Rome",
         phone: "051 290290",
         url: "https://www.tper.it/"
@@ -40,72 +40,127 @@ export class Tper implements Base {
         let data: string;
         let trips: Trip[] | null = null;
         let rawData: any;
-        try {
-            const req = (await this._instance.get("/QueryHellobus", {
-                params: {
-                    fermata: stop.stopId,
-                    linea: " ",
-                    oraHHMM: " "
-                }
-            })) as { data: string };
-            rawData = req.data;
-            // console.log(rawData);
-            logger.debug("TPER data fetched successfully");
-        } catch (err) {
-            if (axios.isAxiosError(err)) {
-                logger.debug("TPER data axios error:");
-                logger.debug(err.response?.data);
-
-                data = err.response?.data || "Unknown error";
-            } else {
-                logger.error("TPER data unknown error:");
-                logger.error(err);
-
-                data = "Unknown error";
-            }
+        if (!stop.routes) {
+            logger.error("TPER stop.routes not defined");
+            return { err: { msg: "Error while loading data", status: 500 } };
         }
 
-        if (!rawData) {
-            return { err: "Error while loading data" } as ResErr;
-        }
         try {
-            const xmlData: any = await parseStringPromise(rawData);
-            let xmlStr: string = xmlData.string._;
-            if (xmlStr.startsWith("TperHellobus: ")) xmlStr = xmlStr.substr(14);
-            else throw new Error("Invalid TperHellobus response");
-            trips = xmlStr.split(", ").map(e => {
-                const s = e.split(" ");
-                const _t = moment.tz(
-                    `${moment().tz("Europe/Rome").format("L")} ${s[2]}`,
-                    "L HH:mm",
-                    "Europe/Rome"
+            const responses: (AxiosResponse<string> | Error)[] =
+                await Promise.all(
+                    stop.routes.map(route => {
+                        const res = this._instance
+                            .get("/QueryHellobus", {
+                                params: {
+                                    fermata: stop.stopId,
+                                    linea: route,
+                                    oraHHMM: " "
+                                }
+                            })
+                            .catch(err => {
+                                if (axios.isAxiosError(err)) {
+                                    logger.debug("TPER data axios error:");
+                                    logger.debug(err.response?.data);
+
+                                    // data = err.response?.data || "Unknown error";
+                                } else {
+                                    logger.error("TPER data unknown error:");
+                                    logger.error(err);
+
+                                    // data = "Unknown error";
+                                }
+                                return err as Error;
+                            });
+                        logger.debug(
+                            `TPER data fetched for stop ${stop.stopId} - line ${route}`
+                        );
+                        return res;
+                    })
                 );
-                const time = _t.unix();
-                const t: Trip = {
-                    shortName: s[0],
-                    longName: "",
-                    realtimeArrival: time,
-                    realtimeDeparture: time,
-                    scheduledArrival: time,
-                    scheduledDeparture: time,
-                    vehicleType: 3,
-                    scheduleRelationship:
-                        s[1] === "Previsto" ? "NO_DATA" : "SCHEDULED",
 
-                    minTillArrival: _t.diff(moment(), "minutes")
+            for (const res of responses) {
+                if (res instanceof Error) continue;
+                rawData = res.data;
+                // console.log(rawData);
+
+                if (!rawData) {
+                    logger.error("TPER rawData is falsy");
+                    return {
+                        err: { msg: "Error while loading data", status: 500 }
+                    };
+                }
+                try {
+                    const xmlData: any = await parseStringPromise(rawData);
+                    let str: string = xmlData.string._;
+                    if (str.startsWith("TperHellobus: ")) str = str.substr(14);
+                    else throw new Error("Invalid TperHellobus response");
+                    if (str.includes("OGGI NESSUNA ALTRA CORSA DI")) continue;
+
+                    trips = str
+                        .split(", ")
+                        .map(e => {
+                            const s = e.split(" ");
+                            const _t = moment.tz(
+                                `${moment().tz("Europe/Rome").format("L")} ${
+                                    s[2]
+                                }`,
+                                "L HH:mm",
+                                "Europe/Rome"
+                            );
+                            const busNumIndex = e.search(
+                                /\(Bus[0-9]+ CON PEDANA\)/g
+                            );
+                            let busNum: string | undefined = undefined;
+                            if (busNumIndex !== -1) {
+                                const s1 = e.substr(busNumIndex);
+                                const sIndex = s1.search(/[0-9]+/g);
+                                if (sIndex === -1) {
+                                    logger.error(
+                                        "Invalid TPER s2 string format"
+                                    );
+                                    return;
+                                }
+                                busNum = s1.substr(sIndex)?.split(" ")[0];
+                            }
+                            const time = _t.unix();
+                            const t: Trip = {
+                                shortName: s[0],
+                                longName: "",
+                                realtimeArrival: time,
+                                realtimeDeparture: time,
+                                scheduledArrival: time,
+                                scheduledDeparture: time,
+                                vehicleType: 3,
+                                scheduleRelationship:
+                                    s[1] === "Previsto"
+                                        ? "NO_DATA"
+                                        : "SCHEDULED",
+                                vehicleCode: busNum,
+                                minTillArrival: _t.diff(moment(), "minutes")
+                            };
+                            return t as any;
+                        })
+                        .filter(e => !!e);
+                } catch (err) {
+                    logger.error(err);
+                    return {
+                        err: { msg: "Error while loading data", status: 500 }
+                    };
+                }
+            }
+
+            if (!trips) {
+                logger.debug("TPER no trips");
+                return {
+                    err: { msg: "Error while loading data", status: 500 }
                 };
-                return t;
-            });
+            }
+            trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
+            return trips;
         } catch (err) {
             logger.error(err);
+            return { err: { msg: "Error while loading data", status: 500 } };
         }
-
-        if (!trips) {
-            return { err: "Error while loading data" };
-        }
-
-        trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
-        return trips;
     };
 
     public static isTripsErr(r: tripFnReturn): r is tripFnErr {
