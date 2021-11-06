@@ -135,6 +135,7 @@ export class Seta implements Base {
                     ? e.num_passeggeri / e.posti_totali
                     : null;
             const trip: Trip = {
+                agencyName: "SETA",
                 tripId: e.codice_corsa,
                 shortName: e.service,
                 longName: e.destination,

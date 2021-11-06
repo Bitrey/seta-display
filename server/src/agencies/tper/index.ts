@@ -15,6 +15,11 @@ type _TperSingleRes = `TperHellobus: ${string} ${
     | "Previsto"
     | "DaSatellite"} ${number}:${number}`;
 
+interface AllBusLd {
+    matricola: string;
+    livello: "basso" | "medio" | "alto";
+}
+
 export class Tper implements Base {
     public static agency: Agency = {
         lang: "it",
@@ -124,6 +129,7 @@ export class Tper implements Base {
                             }
                             const time = _t.unix();
                             const t: Trip = {
+                                agencyName: "TPER",
                                 shortName: s[0],
                                 longName: "",
                                 realtimeArrival: time,
@@ -155,6 +161,33 @@ export class Tper implements Base {
                     err: { msg: "Error while loading data", status: 500 }
                 };
             }
+
+            try {
+                const { data } = await this._instance.get("/QueryAllBusLd");
+                const xmlData: any = await parseStringPromise(data);
+                const arr: AllBusLd[] = JSON.parse(xmlData.string._).AllBusLd;
+                const v = trips.map(t => t.vehicleCode);
+                arr.forEach(e => {
+                    if (v.includes(e.matricola)) {
+                        const i = trips?.findIndex(
+                            t => t.vehicleCode === e.matricola
+                        );
+                        if (!trips || !i || i === -1) {
+                            logger.error("i -1 in TPER QueryAllBusLd");
+                        } else {
+                            trips[i].occupancyStatus =
+                                e.livello === "basso"
+                                    ? "MANY_SEATS_AVAILABLE"
+                                    : e.livello === "medio"
+                                    ? "FEW_SEATS_AVAILABLE"
+                                    : "FULL";
+                        }
+                    }
+                });
+            } catch (err) {
+                logger.error(err);
+            }
+
             trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
             return trips;
         } catch (err) {

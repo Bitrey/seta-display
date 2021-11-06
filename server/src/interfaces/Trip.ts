@@ -1,5 +1,6 @@
 export interface Trip {
     tripId?: string;
+    agencyName: string;
     shortName: string; // Route number
     longName: string; // Route destination
     vehicleType: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12; // See route_type in https://developers.google.com/transit/gtfs/reference#routestxt
