@@ -83,6 +83,7 @@ export class Tper implements Base {
                     })
                 );
 
+            let noTrips = true;
             for (const res of responses) {
                 if (res instanceof Error) continue;
                 rawData = res.data;
@@ -144,6 +145,7 @@ export class Tper implements Base {
                                 vehicleCode: busNum,
                                 minTillArrival: _t.diff(moment(), "minutes")
                             };
+                            noTrips = false;
                             return t as any;
                         })
                         .filter(e => !!e);
@@ -157,9 +159,18 @@ export class Tper implements Base {
 
             if (!trips) {
                 logger.debug("TPER no trips");
-                return {
-                    err: { msg: "Error while loading data", status: 500 }
-                };
+                if (noTrips) {
+                    return {
+                        err: {
+                            msg: "No more tips planned for today",
+                            status: 200
+                        }
+                    };
+                } else {
+                    return {
+                        err: { msg: "Error while loading data", status: 500 }
+                    };
+                }
             }
 
             try {

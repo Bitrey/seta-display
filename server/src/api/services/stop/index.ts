@@ -76,8 +76,10 @@ export const stopService = async ({
         trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
         if (trips.length === 0) {
             if (errs.size === 0) {
+                logger.debug("No trips and " + errs.size + " errors");
                 throw new Error("Error while loading data");
             } /* if ([...errs].find(e => e.status < 400))*/ else {
+                logger.debug("No trips and no errors");
                 throw new Error([...errs].map(e => e.msg).join(", "));
             }
         }
@@ -90,10 +92,17 @@ export const stopService = async ({
             };
         } else {
             logger.error(err);
+            const status = Math.max(...[...errs].map(e => e.status));
+            const msg =
+                status < 400
+                    ? [...errs]
+                          .sort((a, b) => a.status - b.status)
+                          .map(e => e.msg)[0]
+                    : "Error while loading data";
             return {
                 err: {
-                    msg: "Error while loading data",
-                    status: Math.max(...[...errs].map(e => e.status))
+                    msg,
+                    status
                 }
             };
         }

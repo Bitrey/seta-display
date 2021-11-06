@@ -99,7 +99,7 @@ export class Seta implements Base {
             return {
                 err: {
                     msg: "No arrivals scheduled in the next 90 minutes",
-                    status: 204
+                    status: 200
                 }
             };
         } else if (error || !Array.isArray(services)) {
