@@ -7,7 +7,6 @@ import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
 import { join } from "path";
 import { parseStringPromise } from "xml2js";
-import { ResErr } from "../../interfaces/ResErr";
 import { Trip } from "../../interfaces/Trip";
 import moment from "moment-timezone";
 
@@ -94,7 +93,8 @@ export class Tper implements Base {
                     const xmlData: any = await parseStringPromise(rawData);
                     let str: string = xmlData.string._;
                     if (str.startsWith("TperHellobus: ")) str = str.substr(14);
-                    else throw new Error("Invalid TperHellobus response");
+                    // prettier-ignore
+                    else throw new Error(`Invalid TperHellobus response: ${str}`);
                     if (str.includes("OGGI NESSUNA ALTRA CORSA DI")) continue;
 
                     trips = str
@@ -139,6 +139,9 @@ export class Tper implements Base {
                                 vehicleCode: busNum,
                                 minTillArrival: _t.diff(moment(), "minutes")
                             };
+                            if (t.minTillArrival && t.minTillArrival < 0) {
+                                return;
+                            }
                             noTrips = false;
                             return t as any;
                         })
@@ -156,7 +159,7 @@ export class Tper implements Base {
                 if (noTrips) {
                     return {
                         err: {
-                            msg: "No more tips planned for today",
+                            msg: "No more trips planned for today",
                             status: 200
                         }
                     };

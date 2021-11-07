@@ -49,13 +49,28 @@ const isCustomErr = (err: unknown): err is CustomErr => {
     );
 };
 
+const isParseErr = (err: unknown): err is { status: number } => {
+    return (
+        !!err &&
+        typeof err === "object" &&
+        err instanceof SyntaxError &&
+        (err as any).type === "entity.parse.failed"
+    );
+};
+
 // Error handler
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     if (isCustomErr(err)) {
         logger.debug("Custom error: " + err.msg);
         return res.status(err.status).json({ err: err.msg });
+    } else if (isParseErr(err)) {
+        logger.debug("Parse error: " + err);
+        return res
+            .status(err.status || 400)
+            .json({ err: "Error while parsing request body" });
     } else {
-        logger.debug("NOT custom error: " + err);
+        logger.debug("NOT custom error:");
+        logger.error(err);
         return res.status(400).json(err);
     }
 };

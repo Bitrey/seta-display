@@ -3,6 +3,7 @@ import { logger } from "../../../shared/logger";
 import { Trip } from "../../../interfaces/Trip";
 import { Base } from "../../../agencies/Base";
 import { CustomErr } from "../../../interfaces/CustomErr";
+import { tripFnReturn } from "../../../interfaces/tripFn";
 
 interface StopReq {
     agencies: string | string[];
@@ -19,6 +20,8 @@ export const stopService = async ({
     const errs: Set<CustomErr> = new Set(); // to prevent same error
     try {
         let stopsNotFound = [];
+        const p: Promise<tripFnReturn>[] = [];
+        const C: typeof Base[] = [];
         for (const agency of agencies) {
             const Cls = require(join(fPath, agency)).default as typeof Base;
             for (const _stopId of stops) {
@@ -34,14 +37,18 @@ export const stopService = async ({
                     stopsNotFound.push(_stopId);
                     continue;
                 }
-                const t = await Cls.getTrips(s, 10);
-                if (Cls.isTripsErr(t)) {
-                    errs.add(t.err);
-                } else {
-                    trips.push(...t);
-                }
+                p.push(Cls.getTrips(s, 10));
+                C.push(Cls);
             }
         }
+        const tripReturns = await Promise.all(p);
+        tripReturns.forEach((t, i) => {
+            if (C[i].isTripsErr(t)) {
+                errs.add(t.err);
+            } else {
+                trips.push(...t);
+            }
+        });
         if (stopsNotFound.length > 0) {
             // const _s = [];
             // for (const stop of stopsNotFound) {
@@ -91,8 +98,9 @@ export const stopService = async ({
                 err: { msg: `Stop ${err.message} not found`, status: 400 }
             };
         } else {
-            logger.error(err);
             const status = Math.max(...[...errs].map(e => e.status));
+            if (status < 400) logger.debug(err);
+            else logger.error(err);
             const msg =
                 status < 400
                     ? [...errs]
