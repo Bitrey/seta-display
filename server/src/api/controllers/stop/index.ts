@@ -93,11 +93,13 @@ export const stopController = async (
 
     const { error } = stopSchema.validate({ stops, agencies });
     if (error) {
+        logger.debug("Stop controller validation failed");
         return next({ msg: error.message, status: 400 });
     }
 
     const { trips, err } = await stopService({ stops, agencies });
     if (err) {
+        logger.debug("Stop service failed");
         return next({ msg: err.msg, status: err.status });
     }
 

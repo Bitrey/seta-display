@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import axios from "axios";
-import moment from "moment-timezone";
+// import moment from "moment-timezone";
 // import PropTypes from "prop-types";
 
 /*

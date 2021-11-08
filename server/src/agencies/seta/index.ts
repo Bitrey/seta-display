@@ -169,10 +169,14 @@ export class Seta implements Base {
                 // additionalInfo: undefined
                 backgroundColor: e.serviceType === "EX" ? "#1267B7" : "#FFC100",
                 textColor: "#FFFFFF",
-                minTillArrival: _t.diff(moment(), "minutes")
+                minTillArrival: _t.diff(moment().tz("Europe/Rome"), "minutes")
             };
 
-            if (trip.realtimeArrival >= Base.getTime().unix()) {
+            if (
+                trip.realtimeArrival >= Base.getTime().unix() &&
+                trip.minTillArrival &&
+                trip.minTillArrival > 0
+            ) {
                 res.push(trip);
             }
         }
