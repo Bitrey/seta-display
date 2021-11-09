@@ -8,6 +8,7 @@ import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
 import { join } from "path";
 import { readFileSync } from "fs";
+import { cwd } from "process";
 
 interface _SetaRes {
     arrival: {
@@ -50,7 +51,9 @@ export class Seta implements Base {
 
     static get stops(): Stop[] {
         return JSON.parse(
-            readFileSync(join(__dirname, "./stops.json"), { encoding: "utf-8" })
+            readFileSync(join(cwd(), "./agency_files/seta/stops.json"), {
+                encoding: "utf-8"
+            })
         );
     }
 

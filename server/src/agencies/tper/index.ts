@@ -9,6 +9,7 @@ import { join } from "path";
 import { parseStringPromise } from "xml2js";
 import { Trip } from "../../interfaces/Trip";
 import moment from "moment-timezone";
+import { cwd } from "process";
 
 type _TperSingleRes = `TperHellobus: ${string} ${
     | "Previsto"
@@ -31,7 +32,9 @@ export class Tper implements Base {
 
     static get stops(): Stop[] {
         return JSON.parse(
-            readFileSync(join(__dirname, "./stops.json"), { encoding: "utf-8" })
+            readFileSync(join(cwd(), "./agency_files/tper/stops.json"), {
+                encoding: "utf-8"
+            })
         );
     }
 
