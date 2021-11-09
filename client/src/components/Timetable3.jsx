@@ -73,21 +73,28 @@ const Timetable = props => {
                         <p>Min. all'arrivo</p>
                     </div>
                     <div className="w-full flex flex-col h-full bg-gray-100 text-black px-6 py-3">
-                        {trips.map(t => {
-                            return (
-                                <div className="w-full flex flex-row items-center mb-3">
-                                    <p className="w-32 font-semibold text-4xl mr-3">
-                                        {t.shortName}
-                                    </p>
-                                    <p className="w-screen text-xl max-w-xs mr-3">
-                                        {t.longName}
-                                    </p>
-                                    <p className="font-semibold text-xl">
-                                        {t.minTillArrival}
-                                    </p>
-                                </div>
-                            );
-                        })}
+                        {trips ? (
+                            trips.map((t, i) => {
+                                return (
+                                    <div
+                                        key={i}
+                                        className="w-full flex flex-row items-center mb-3"
+                                    >
+                                        <p className="w-32 font-semibold text-4xl mr-3">
+                                            {t.shortName}
+                                        </p>
+                                        <p className="w-screen text-xl max-w-xs mr-3">
+                                            {t.longName}
+                                        </p>
+                                        <p className="font-semibold text-xl">
+                                            {t.minTillArrival}
+                                        </p>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <p>caricamento...</p>
+                        )}
                     </div>
                 </div>
             </div>
