@@ -8,13 +8,15 @@ import { tripFnReturn } from "../../../interfaces/tripFn";
 interface StopReq {
     agencies: string | string[];
     stops: string | string[];
+    limit?: number;
 }
 
 const fPath = join(__dirname, "../../../agencies");
 
 export const stopService = async ({
     agencies,
-    stops
+    stops,
+    limit
 }: StopReq): Promise<{ trips?: Trip[]; err?: CustomErr }> => {
     const trips: Trip[] = [];
     const errs: Set<CustomErr> = new Set(); // to prevent same error
@@ -90,7 +92,7 @@ export const stopService = async ({
                 throw new Error([...errs].map(e => e.msg).join(", "));
             }
         }
-        return { trips };
+        return { trips: trips.slice(0, limit || undefined) };
     } catch (err) {
         if (err instanceof ReferenceError) {
             logger.debug("Stop not found");

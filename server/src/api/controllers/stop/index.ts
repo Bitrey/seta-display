@@ -65,7 +65,10 @@ export const stopSchema = Joi.object({
                 "any.required": "stops field is required",
                 "any.error": "Stop not found"
             })
-    )
+    ),
+    limit: Joi.number()
+        .min(1)
+        .messages({ "number.min": "limit must be at least 1" })
 });
 
 export const stopController = async (
@@ -73,9 +76,10 @@ export const stopController = async (
     res: Response,
     next: NextFunction
 ) => {
-    let { agency, stopId } = req.body as {
+    let { agency, stopId, limit } = req.body as {
         agency: string | string[];
         stopId: string | string[];
+        limit?: number;
     };
 
     try {
@@ -97,7 +101,7 @@ export const stopController = async (
         return next({ msg: error.message, status: 400 });
     }
 
-    const { trips, err } = await stopService({ stops, agencies });
+    const { trips, err } = await stopService({ stops, agencies, limit });
     if (err) {
         logger.debug("Stop service failed");
         return next({ msg: err.msg, status: err.status });

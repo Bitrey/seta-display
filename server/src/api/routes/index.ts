@@ -29,6 +29,10 @@ import { timeController } from "../controllers/time";
  *            type: string
  *            description: Name of the agency (all lowercase)
  *            example: seta
+ *          limit:
+ *            type: number
+ *            description: Limit the results
+ *            example: 10
  */
 
 /**
