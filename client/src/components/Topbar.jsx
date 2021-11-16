@@ -1,49 +1,23 @@
 import React, { Component } from "react";
-import axios from "axios";
 
 class Topbar extends Component {
-    state = {
-        stopName: null,
-        time: null,
-        err: null
-    };
-
-    async componentDidMount() {
-        try {
-            console.log(this.props);
-            const res = await axios.post("/api/time", {
-                agency: this.props.agency
-            });
-            this.setState({ time: res.data.time });
-        } catch (err) {
-            if (err?.response?.data?.err) {
-                this.setState({ err: err.response.data.err });
-                console.log(this.state.err);
-            } else {
-                this.setState({ err: "Unknown error" });
-                console.error(err);
-            }
-        }
-    }
-
     render() {
+        const { time, stopId, stopName } = this.props;
         return (
-            <div
-                className={
-                    "text-yellow-200 w-full p-4 " + (this.props.className || "")
-                }
-            >
-                <div className="flex justify-between">
-                    <div className="flex flex-col">
-                        <p className="text-xl">Ti trovi alla fermata</p>
-                        <p className="text-5xl">San Cesario</p>
-                    </div>
-                    <div className="flex flex-col text-right">
-                        <p className="text-xl">27/10/2021</p>
-                        <p className="text-5xl">{this.state.time || "XX:XX"}</p>
+            <>
+                <div className="w-full flex flex-row items-center justify-between bg-gray-900 py-3 px-6">
+                    <p className="text-2xl font-semibold">{stopName}</p>
+                    <p className="font-light">{time || "Caricamento..."}</p>
+                </div>
+                <div className="w-full flex flex-col bg-gray-700 py-2 px-4">
+                    <div className="flex ml-auto items-center">
+                        <p className="font-light mr-2">Codice fermata</p>
+                        <p>
+                            {Array.isArray(stopId) ? stopId.join(", ") : stopId}
+                        </p>
                     </div>
                 </div>
-            </div>
+            </>
         );
     }
 }

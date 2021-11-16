@@ -95,7 +95,7 @@ export const stopController = async (
     );
     const agencies = Array.isArray(agency) ? agency : [agency];
 
-    const { error } = stopSchema.validate({ stops, agencies });
+    const { error } = stopSchema.validate({ stops, agencies, limit });
     if (error) {
         logger.debug("Stop controller validation failed");
         return next({ msg: error.message, status: 400 });
