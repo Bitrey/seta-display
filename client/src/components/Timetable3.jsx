@@ -56,42 +56,54 @@ const Timetable = props => {
                     stopName={stopName}
                     time={time}
                 />
-                <AdBanner />
+                <div className="w-full flex flex-row">
+                    <AdBanner />
 
-                <div className="w-full rounded-2xl overflow-hidden h-full">
-                    <div className="w-full flex text-left bg-gray-700 text-white px-6 py-3 font-light">
-                        <p className="w-32 mr-3">Linea</p>
-                        <p className="w-screen max-w-xs mr-3">Destinazione</p>
-                        <p>Min. all'arrivo</p>
-                    </div>
-                    <div className="w-full flex flex-col h-full bg-gray-100 text-black">
-                        {trips
-                            ? trips.map((t, i) => {
-                                  return (
-                                      <div
-                                          key={i}
-                                          className={`w-full flex flex-row items-center px-6 py-2 ${
-                                              i % 2 === 1 ? "bg-gray-200" : ""
-                                          }`}
-                                      >
-                                          <p className="w-32 font-semibold text-4xl mr-3">
-                                              {t.shortName}
-                                          </p>
-                                          <p className="w-screen text-xl max-w-xs mr-3">
-                                              {t.longName}
-                                          </p>
-                                          <p className="font-semibold text-xl">
-                                              {t.minTillArrival}
-                                          </p>
+                    <div className="bg-gray-400 overflow-hidden h-full grid grid-cols-3">
+                        <div className="w-full text-left bg-gray-700 col-span-3 grid grid-cols-3 text-white px-6 py-3 font-light">
+                            <p className="mr-3">Linea</p>
+                            <p className="mr-3">Destinazione</p>
+                            <p>Tempo all'arrivo</p>
+                        </div>
+                        <div className="w-full col-span-3 flex flex-col h-full bg-gray-100 text-black">
+                            {trips
+                                ? trips.map((t, i) => {
+                                      return (
+                                          <div
+                                              key={i}
+                                              className={`w-full grid grid-cols-3 items-center px-6 py-2 ${
+                                                  i % 2 === 1
+                                                      ? "bg-gray-200"
+                                                      : ""
+                                              }`}
+                                          >
+                                              <p className="w-32 font-semibold text-2xl mr-3">
+                                                  {t.shortName}
+                                              </p>
+                                              <p className="w-screen text-lg max-w-xs mr-3">
+                                                  {t.longName}
+                                              </p>
+                                              <p className="font-semibold text-lg">
+                                                  {t.minTillArrival > 60
+                                                      ? `${Math.floor(
+                                                            t.minTillArrival /
+                                                                60
+                                                        )}h ${
+                                                            t.minTillArrival %
+                                                            60
+                                                        }m`
+                                                      : t.minTillArrival + "m"}
+                                              </p>
+                                          </div>
+                                      );
+                                  })
+                                : (reqErr && (
+                                      <div className="w-full bg-red-500 mb-4 text-white p-4 h-full">
+                                          <p className="font-semibold">Error</p>
+                                          <p>{reqErr}</p>
                                       </div>
-                                  );
-                              })
-                            : (reqErr && (
-                                  <div className="w-full bg-red-500 mb-4 text-white p-4 h-full">
-                                      <p className="font-semibold">Error</p>
-                                      <p>{reqErr}</p>
-                                  </div>
-                              )) || <p className="p-3">caricamento...</p>}
+                                  )) || <p className="p-3">caricamento...</p>}
+                        </div>
                     </div>
                 </div>
             </div>
