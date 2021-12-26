@@ -1,39 +1,66 @@
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import axios from "axios";
+import { scheduleJob } from "node-schedule";
 import "./App.css";
 import Timetable from "./components/Timetable3.jsx";
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import moment from "moment-timezone";
 
-const agency = ["seta"];
+const agency = ["seta", "tper"];
 const stopName = "San Cesario";
-const stopId = ["MO2076", "MO3600"];
+const stopId = [
+    "MO2076",
+    "MO3600",
+    "68041",
+    "68042",
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+];
 const limit = 10;
+
+const useWindowWidth = () => {
+    const [size, setSize] = useState(0);
+    useLayoutEffect(() => {
+        const updateSize = () => {
+            setSize(window.innerWidth);
+        };
+        window.addEventListener("resize", updateSize);
+        updateSize();
+        return () => window.removeEventListener("resize", updateSize);
+    }, []);
+    return size;
+};
 
 function App() {
     /** @type {[Trip[] | null, React.Dispatch<Trip[]>]} */
     const [trips, setTrips] = useState(null);
     const [reqErr, setReqErr] = useState(null);
-    const [updateDate, setUpdateDate] = useState(null);
-    const [updateTimeout, setUpdateTimeout] = useState(null);
-    const [isTimeoutGoing, setTimeoutGoing] = useState(false);
+    const [jobName, setJobName] = useState(null);
+    const [tripsLoaded, setTripsLoaded] = useState(false);
 
-    const [time, setTime] = useState(null);
+    const width = useWindowWidth();
+
+    document
+        .querySelectorAll(".scroll-text")
+        .forEach(e => (e.style.animationDuration = `${width / 30}s`));
 
     useEffect(() => {
         async function getData() {
             try {
-                // console.log("getData");
+                setTripsLoaded(false);
                 const { data } = await axios.post("/api/stop", {
                     agency,
                     stopId,
                     limit
                 });
                 setTrips(data);
-                getTime();
-                console.log({ data });
-                if (updateTimeout) clearTimeout(updateTimeout);
-
-                setTimeoutGoing(false);
+                setTripsLoaded(true);
+                console.log(data);
             } catch (err) {
                 setReqErr(
                     err?.response?.data?.err?.toString() || err.toString()
@@ -41,36 +68,12 @@ function App() {
                 console.log(err, err?.response);
             }
         }
-        if (!isTimeoutGoing) {
-            // console.log("start timeout");
-            const delay =
-                !updateDate || moment().diff(updateDate, "seconds") > 30
-                    ? 0
-                    : 30;
-            setUpdateTimeout(setTimeout(getData, delay * 1000));
-            setUpdateDate(moment().add(!updateDate ? delay : "seconds"));
-            setTimeoutGoing(true);
+        if (!jobName) {
+            const _job = scheduleJob("0 * * * * *", getData);
+            setJobName(_job.name);
+            getData();
         }
-
-        async function getTime() {
-            try {
-                const res = await axios.post("/api/time", {
-                    agency: Array.isArray(agency) ? agency[0] : agency,
-                    format: "DD/MM/YYYY HH:mm"
-                });
-                console.log(res.data);
-                setTime(res.data.time);
-            } catch (err) {
-                if (err?.response?.data?.err) {
-                    setTime(err?.response?.data?.err || null);
-                    console.log(err);
-                } else {
-                    setTime(null);
-                    console.error(err);
-                }
-            }
-        }
-    }, [isTimeoutGoing, updateTimeout, updateDate]);
+    }, [jobName]);
 
     return (
         <div className="App">
@@ -86,10 +89,10 @@ function App() {
                         agency={agency}
                         stopName={stopName}
                         trips={trips}
+                        tripsLoaded={tripsLoaded}
                         reqErr={reqErr}
                         stopId={stopId}
                         limit={limit}
-                        time={time}
                     />
                 </div>
             </div>

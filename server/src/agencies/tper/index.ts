@@ -1,4 +1,4 @@
-import axios, { Axios, AxiosResponse } from "axios";
+import axios, { AxiosResponse } from "axios";
 import { readFileSync } from "fs";
 import { logger } from "../../shared/logger";
 import { Stop } from "../../interfaces/Stop";
@@ -11,9 +11,8 @@ import { Trip } from "../../interfaces/Trip";
 import moment from "moment-timezone";
 import { cwd } from "process";
 
-type _TperSingleRes = `TperHellobus: ${string} ${
-    | "Previsto"
-    | "DaSatellite"} ${number}:${number}`;
+// type _TperSingleRes = `TperHellobus: ${string} ${| "Previsto"
+//     | "DaSatellite"} ${number}:${number}`;
 
 interface AllBusLd {
     matricola: string;
@@ -67,7 +66,7 @@ export class Tper implements Base {
                             .catch(err => {
                                 if (axios.isAxiosError(err)) {
                                     logger.debug("TPER data axios error:");
-                                    logger.debug(err.response?.data);
+                                    logger.debug(err.response?.data || err.response || err.code);
 
                                     // data = err.response?.data || "Unknown error";
                                 } else {
@@ -101,7 +100,8 @@ export class Tper implements Base {
                     const xmlData: any = await parseStringPromise(rawData);
                     let str: string = xmlData.string._;
                     if (str.startsWith("TperHellobus: ")) str = str.substr(14);
-                    // prettier-ignore
+                    else if (str.includes("ERR_TOO_MANY_REQUESTS_LOCK")) throw new Error("TperHellobus requests limit reached")
+                    else if (str.includes("SERVICE FAILURE")) throw new Error("TperHellobus service failed")
                     else throw new Error(`Invalid TperHellobus response: ${str}`);
                     if (str.includes("OGGI NESSUNA ALTRA CORSA DI")) continue;
 
@@ -110,8 +110,7 @@ export class Tper implements Base {
                         .map(e => {
                             const s = e.split(" ");
                             const _t = moment.tz(
-                                `${moment().tz("Europe/Rome").format("L")} ${
-                                    s[2]
+                                `${moment().tz("Europe/Rome").format("L")} ${s[2]
                                 }`,
                                 "L HH:mm",
                                 "Europe/Rome"
@@ -196,8 +195,8 @@ export class Tper implements Base {
                                 e.livello === "basso"
                                     ? "MANY_SEATS_AVAILABLE"
                                     : e.livello === "medio"
-                                    ? "FEW_SEATS_AVAILABLE"
-                                    : "FULL";
+                                        ? "FEW_SEATS_AVAILABLE"
+                                        : "FULL";
                         }
                     }
                 });
