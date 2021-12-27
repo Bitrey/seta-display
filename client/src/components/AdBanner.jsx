@@ -3,7 +3,7 @@ import React from "react";
 const AdBanner = ({ img, name, description, className }) => {
     return (
         <div
-            className={`flex flex-col items-center w-full p-6 my-2 lg:my-8 justify-center ${
+            className={`flex flex-col h-full bg-gray-100 items-center w-full p-6 justify-center ${
                 className || ""
             }`}
         >
@@ -20,7 +20,7 @@ const AdBanner = ({ img, name, description, className }) => {
                 />
             </div>
 
-            <div className="flex flex-col mb-2 ml-6 md:mb-0 md:ml-0 md:mt-4">
+            <div className="flex flex-col mb-2 ml-6 lg:mb-0 lg:ml-0 lg:mt-4">
                 <p className="text-gray-700 text-3xl">
                     Pianifica il tuo viaggio
                 </p>

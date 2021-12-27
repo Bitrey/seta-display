@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { logger } from "../../shared/logger";
+import { newsController } from "../controllers/news";
 export const router = Router();
 
 logger.info("Loading API routes");
@@ -26,11 +27,16 @@ import { timeController } from "../controllers/time";
  *            description: Stop code
  *            example: MO2076
  *          agency:
- *            type: string
+ *            oneOf:
+ *              - type: string
+ *              - type: array
+ *                items:
+ *                  type: string
  *            description: Name of the agency (all lowercase)
  *            example: seta
  *          limit:
- *            type: number
+ *            type: integer
+ *            minimum: 1
  *            description: Limit the results
  *            example: 10
  */
@@ -136,3 +142,74 @@ router.post("/stop", stopController);
  *              $ref: '#/components/schemas/ResErr'
  */
 router.post("/time", timeController);
+
+/**
+ * @swagger
+ *  components:
+ *    schemas:
+ *      NewsReq:
+ *        type: object
+ *        required:
+ *          - agency
+ *        properties:
+ *          agency:
+ *            oneOf:
+ *              - type: string
+ *              - type: array
+ *                items:
+ *                  type: string
+ *            description: Name of the agency (all lowercase)
+ *            example: seta
+ *          fromDate:
+ *            type: string
+ *            format: date
+ *            description: Starting ISO 8601 date to filter news
+ *            example: 2021-12-25T14:31:23.704Z
+ *          toDate:
+ *            type: string
+ *            format: date
+ *            description: Finishing ISO 8601 date to filter news
+ *            example: 2021-12-27T14:31:23.704Z
+ *          limit:
+ *            type: integer
+ *            minimum: 1
+ *            description: Limit the results
+ *            example: 10
+ */
+
+/**
+ * @openapi
+ * /api/news:
+ *  post:
+ *    description: Fetch news for a specific agency
+ *    tags:
+ *      - api
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/NewsReq'
+ *    responses:
+ *      '200':
+ *        description: News
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/News'
+ *      '400':
+ *        description: Bad request
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
+ *      '500':
+ *        description: Server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
+ */
+router.post("/news", newsController);

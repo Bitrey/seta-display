@@ -15,3 +15,6 @@
 export interface ResErr {
     err: string;
 }
+export function isResErr(err: unknown): err is ResErr {
+    return typeof err === "string";
+}

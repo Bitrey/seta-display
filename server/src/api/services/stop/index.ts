@@ -4,6 +4,7 @@ import { Trip } from "../../../interfaces/Trip";
 import { Base } from "../../../agencies/Base";
 import { CustomErr } from "../../../interfaces/CustomErr";
 import { tripFnReturn } from "../../../interfaces/tripFn";
+import { isFnErr } from "../../../interfaces/FnErr";
 
 interface StopReq {
     agencies: string | string[];
@@ -45,7 +46,7 @@ export const stopService = async ({
         }
         const tripReturns = await Promise.all(p);
         tripReturns.forEach((t, i) => {
-            if (C[i].isTripsErr(t)) {
+            if (isFnErr(t)) {
                 errs.add(t.err);
             } else {
                 trips.push(...t);

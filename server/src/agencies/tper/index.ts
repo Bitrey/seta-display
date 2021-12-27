@@ -1,18 +1,32 @@
 import axios, { AxiosResponse } from "axios";
 import { readFileSync } from "fs";
+import { join } from "path";
+import { parseStringPromise } from "xml2js";
+import { cwd } from "process";
+import moment from "moment-timezone";
+import Parser from "rss-parser";
 import { logger } from "../../shared/logger";
 import { Stop } from "../../interfaces/Stop";
 import { Agency } from "../../interfaces/Agency";
-import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
+import { tripFn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
-import { join } from "path";
-import { parseStringPromise } from "xml2js";
 import { Trip } from "../../interfaces/Trip";
-import moment from "moment-timezone";
-import { cwd } from "process";
+import { newsFn } from "../../interfaces/newsFn";
+import { News } from "../../interfaces/News";
 
 // type _TperSingleRes = `TperHellobus: ${string} ${| "Previsto"
 //     | "DaSatellite"} ${number}:${number}`;
+
+const NewsTypes = [
+    "primaPagina",
+    "tutte",
+    "bologna",
+    "ferrara",
+    "ferrovia",
+    "carBikeSharing",
+    "contrassegniSosta"
+] as const;
+type NewsType = typeof NewsTypes[number];
 
 interface AllBusLd {
     matricola: string;
@@ -42,8 +56,48 @@ export class Tper implements Base {
         timeout: 10000
     });
 
+    private static _getNewsUrl(type: NewsType): string {
+        if (type === "primaPagina") return "https://www.tper.it/rss.xml";
+        else if (type === "tutte")
+            return "https://www.tper.it/tutte-le-news/rss.xml";
+        else if (type === "ferrovia")
+            return "https://www.tper.it/linee-ferroviarie/rss.xml";
+        else
+            return `https://www.tper.it/taxonomy/term/${
+                type === "bologna"
+                    ? "33"
+                    : type === "ferrara"
+                    ? "34"
+                    : type === "carBikeSharing"
+                    ? "438"
+                    : type === "contrassegniSosta"
+                    ? "437"
+                    : console.error("NewsType non valido in getNews TPER", "33")
+            }/all/rss.xml`;
+    }
+
+    public static getNews: newsFn = async ({ type }: { type: NewsType }) => {
+        if (!NewsTypes.includes(type)) {
+            return { err: { msg: "Invalid TPER news type", status: 400 } };
+        }
+
+        const parser = new Parser();
+        const feed = await parser.parseURL(Tper._getNewsUrl(type));
+        const news: News[] = [];
+
+        feed.items.forEach((item: any) => {
+            if (!item.title) return;
+            news.push({
+                agency: this.agency.name,
+                date: moment.parseZone(item.isoDate),
+                title: item.title
+            });
+        });
+
+        return news;
+    };
+
     public static getTrips: tripFn = async (stop, maxResults) => {
-        let data: string;
         let trips: Trip[] | null = null;
         let rawData: any;
         if (!stop.routes) {
@@ -66,7 +120,11 @@ export class Tper implements Base {
                             .catch(err => {
                                 if (axios.isAxiosError(err)) {
                                     logger.debug("TPER data axios error:");
-                                    logger.debug(err.response?.data || err.response || err.code);
+                                    logger.debug(
+                                        err.response?.data ||
+                                            err.response ||
+                                            err.code
+                                    );
 
                                     // data = err.response?.data || "Unknown error";
                                 } else {
@@ -100,9 +158,14 @@ export class Tper implements Base {
                     const xmlData: any = await parseStringPromise(rawData);
                     let str: string = xmlData.string._;
                     if (str.startsWith("TperHellobus: ")) str = str.substr(14);
-                    else if (str.includes("ERR_TOO_MANY_REQUESTS_LOCK")) throw new Error("TperHellobus requests limit reached")
-                    else if (str.includes("SERVICE FAILURE")) throw new Error("TperHellobus service failed")
-                    else throw new Error(`Invalid TperHellobus response: ${str}`);
+                    else if (str.includes("ERR_TOO_MANY_REQUESTS_LOCK"))
+                        throw new Error("TperHellobus requests limit reached");
+                    else if (str.includes("SERVICE FAILURE"))
+                        throw new Error("TperHellobus service failed");
+                    else
+                        throw new Error(
+                            `Invalid TperHellobus response: ${str}`
+                        );
                     if (str.includes("OGGI NESSUNA ALTRA CORSA DI")) continue;
 
                     trips = str
@@ -110,7 +173,8 @@ export class Tper implements Base {
                         .map(e => {
                             const s = e.split(" ");
                             const _t = moment.tz(
-                                `${moment().tz("Europe/Rome").format("L")} ${s[2]
+                                `${moment().tz("Europe/Rome").format("L")} ${
+                                    s[2]
                                 }`,
                                 "L HH:mm",
                                 "Europe/Rome"
@@ -195,8 +259,8 @@ export class Tper implements Base {
                                 e.livello === "basso"
                                     ? "MANY_SEATS_AVAILABLE"
                                     : e.livello === "medio"
-                                        ? "FEW_SEATS_AVAILABLE"
-                                        : "FULL";
+                                    ? "FEW_SEATS_AVAILABLE"
+                                    : "FULL";
                         }
                     }
                 });
@@ -211,10 +275,6 @@ export class Tper implements Base {
             return { err: { msg: "Error while loading data", status: 500 } };
         }
     };
-
-    public static isTripsErr(r: tripFnReturn): r is tripFnErr {
-        return "err" in r;
-    }
 }
 
 export default Tper;

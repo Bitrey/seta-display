@@ -18,54 +18,58 @@ export const stopSchema = Joi.object({
     //         // DEBUG: check that displayId exists in the displays database
     //         return true;
     //     }),
-    agencies: Joi.array().items(
-        Joi.string()
-            .min(1)
-            .required()
-            .custom((v, helper) => {
-                // prettier-ignore
-                try {
+    agencies: Joi.array()
+        .min(1)
+        .items(
+            Joi.string()
+                .min(1)
+                .required()
+                .custom((v, helper) => {
+                    // prettier-ignore
+                    try {
                     v = JSON.parse(v);
                 } catch (err) {}
 
-                if (!getAgencyNames().includes(v)) {
-                    return helper.error("any.error");
-                }
-                return true;
-            })
-            .messages({
-                "string.min": "format must be at least 1 character long",
-                "any.required": "agencies field is required",
-                "any.error": "Agency not found"
-            })
-    ),
-    stops: Joi.array().items(
-        Joi.string()
-            .min(1)
-            .required()
-            // this takes too much, check if stops exist in service
-            // .custom((v, helper) => {
-            //     try {
-            //         v = JSON.parse(v);
-            //     } catch (err) {}
+                    if (!getAgencyNames().includes(v)) {
+                        return helper.error("any.error");
+                    }
+                    return true;
+                })
+                .messages({
+                    "string.min": "format must be at least 1 character long",
+                    "any.required": "agencies field is required",
+                    "any.error": "Agency not found"
+                })
+        ),
+    stops: Joi.array()
+        .min(1)
+        .items(
+            Joi.string()
+                .min(1)
+                .required()
+                // this takes too much, check if stops exist in service
+                // .custom((v, helper) => {
+                //     try {
+                //         v = JSON.parse(v);
+                //     } catch (err) {}
 
-            //     if (
-            //         !getAllStops()
-            //             // (console.log(Joi.ref("agencies")), undefined)
-            //             // Joi.ref("agencies").toString())
-            //             .map(e => e.stopId.toString())
-            //             .includes(v.toString())
-            //     ) {
-            //         return helper.error("any.error");
-            //     }
-            //     return true;
-            // })
-            .messages({
-                "string.min": "format must be at least 1 character long",
-                "any.required": "stops field is required",
-                "any.error": "Stop not found"
-            })
-    ),
+                //     if (
+                //         !getAllStops()
+                //             // (console.log(Joi.ref("agencies")), undefined)
+                //             // Joi.ref("agencies").toString())
+                //             .map(e => e.stopId.toString())
+                //             .includes(v.toString())
+                //     ) {
+                //         return helper.error("any.error");
+                //     }
+                //     return true;
+                // })
+                .messages({
+                    "string.min": "format must be at least 1 character long",
+                    "any.required": "stops field is required",
+                    "any.error": "Stop not found"
+                })
+        ),
     limit: Joi.number()
         .min(1)
         .messages({ "number.min": "limit must be at least 1" })

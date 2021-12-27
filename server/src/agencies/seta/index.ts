@@ -1,14 +1,18 @@
 import axios from "axios";
 import moment from "moment-timezone";
+import https from "https";
+import { join } from "path";
+import { readFileSync } from "fs";
+import { cwd } from "process";
+import cheerio from "cheerio";
 import { logger } from "../../shared/logger";
 import { Trip } from "../../interfaces/Trip";
 import { Stop } from "../../interfaces/Stop";
 import { Agency } from "../../interfaces/Agency";
-import { tripFn, tripFnErr, tripFnReturn } from "../../interfaces/tripFn";
+import { tripFn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
-import { join } from "path";
-import { readFileSync } from "fs";
-import { cwd } from "process";
+import { News } from "../../interfaces/News";
+import { newsFn } from "../../interfaces/newsFn";
 
 interface _SetaRes {
     arrival: {
@@ -61,6 +65,53 @@ export class Seta implements Base {
         baseURL: "https://avm.setaweb.it/SETA_WS/services/arrival/",
         timeout: 10000
     });
+
+    public static getNews: newsFn = async ({
+        bacino
+    }: {
+        bacino: string | null;
+    }) => {
+        let data;
+        const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+        try {
+            const _bacino: "mo" | "re" | "pc" | null =
+                !!bacino && ["mo", "re", "pc"].includes(bacino)
+                    ? (bacino as any)
+                    : null;
+            const res = await axios.get(
+                _bacino
+                    ? `https://www.setaweb.it/${_bacino}/news`
+                    : "https://www.setaweb.it/news",
+                { httpsAgent }
+            );
+            data = res.data;
+        } catch (err) {
+            logger.error("Error while fetching SETA news");
+            logger.error(
+                (axios.isAxiosError(err) && err.response?.data) || err
+            );
+            return {
+                err: {
+                    msg: "Error while fetching SETA news",
+                    status:
+                        (axios.isAxiosError(err) && err.response?.status) || 500
+                }
+            };
+        }
+
+        const $ = cheerio.load(data);
+        const news: News[] = [];
+        for (let i = 0; i < $(".title").length; i++) {
+            news.push({
+                agency: this.agency.name,
+                date: moment($(".date-title").eq(i).text(), "DD.MM.YYYY"),
+                type: $(".bacini-title").eq(i).text(),
+                title: $(".title").eq(i).text()
+            });
+        }
+
+        return news;
+    };
 
     public static getTrips: tripFn = async (stop, maxResults) => {
         let data: _SetaRes;
@@ -187,10 +238,6 @@ export class Seta implements Base {
 
         return maxResults ? res.slice(0, maxResults) : res;
     };
-
-    public static isTripsErr(r: tripFnReturn): r is tripFnErr {
-        return "err" in r;
-    }
 }
 
 export default Seta;

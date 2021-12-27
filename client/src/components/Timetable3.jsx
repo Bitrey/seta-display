@@ -37,7 +37,7 @@ const Timetable = props => {
     const agency = props.agency;
 
     /** @type {string | null} */
-    const reqErr = props.reqErr;
+    const tripsReqErr = props.tripsReqErr;
 
     // /** @type {number} */
     // const limit = props.limit;
@@ -48,6 +48,15 @@ const Timetable = props => {
     /** @type {string} */
     const stopName = props.stopName;
 
+    /** @type {object[] | null} */
+    const news = props.news;
+
+    /** @type {boolean} */
+    const newsLoaded = props.newsLoaded;
+
+    /** @type {string | null} */
+    const newsReqErr = props.newsReqErr;
+
     return (
         <div className="w-full flex rounded-2xl h-full overflow-hidden bg-white">
             <div className="w-full flex flex-col text-white">
@@ -55,32 +64,41 @@ const Timetable = props => {
                     agency={Array.isArray(agency) ? agency[0] : agency}
                     stopId={stopId}
                     stopName={stopName}
+                    news={news}
+                    newsLoaded={newsLoaded}
+                    newsReqErr={newsReqErr}
                 />
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 h-full">
-                    <AdBanner className="order-2 md:order-1" />
+                <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full">
+                    <AdBanner className="order-2 lg:order-1 border-r" />
 
-                    <div className="order-1 md:order-2 bg-gray-100 auto-rows-min overflow-hidden h-full grid grid-cols-3">
-                        {trips ? (
-                            <div className="w-full text-left bg-gray-700 col-span-3 grid grid-cols-3 text-white px-6 py-3 font-light">
+                    <div className="border-l order-1 lg:order-2 bg-gray-100 auto-rows-min overflow-hidden h-full grid grid-cols-3">
+                        {trips && !tripsReqErr ? (
+                            <div className="w-full text-left bg-gray-700 col-span-3 grid grid-cols-6 text-white px-6 py-3">
                                 <p className="mr-3 text-lg">Linea</p>
-                                <p className="mr-3 text-lg">Destinazione</p>
-                                <p className="text-lg">Tempo all'arrivo</p>
+                                <p className="mr-3 text-lg col-span-3">
+                                    Destinazione
+                                </p>
+                                <p className="text-lg col-span-2">
+                                    Tempo all'arrivo
+                                </p>
                             </div>
                         ) : (
-                            !reqErr && (
+                            !tripsReqErr && (
                                 <div className="w-full text-left bg-gray-700 col-span-3 text-white px-6 py-3 font-light">
                                     <p className="text-lg">Caricamento...</p>
                                 </div>
                             )
                         )}
                         <div className="w-full col-span-3 flex flex-col h-full bg-gray-100 text-black">
-                            {Array.isArray(trips) && trips.length >= 1 ? (
-                                trips.map((t, i) => <Trip t={t} i={i} />)
-                            ) : reqErr ? (
+                            {tripsReqErr ? (
                                 <div className="w-full bg-red-500 text-white p-4">
                                     <p className="font-semibold">Errore</p>
-                                    <p>{reqErr}</p>
+                                    <p>{tripsReqErr}</p>
                                 </div>
+                            ) : Array.isArray(trips) && trips.length >= 1 ? (
+                                trips.map((t, i) => (
+                                    <Trip key={i} t={t} i={i} />
+                                ))
                             ) : (
                                 tripsLoaded && (
                                     <p className="p-4">

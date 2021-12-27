@@ -1,5 +1,6 @@
 import moment from "moment-timezone";
 import { Seta } from "./agencies/seta";
+import { isFnErr } from "./interfaces/FnErr";
 
 async function test() {
     const s = Seta.stops.find(e => e.stopId === "MO3600");
@@ -8,7 +9,7 @@ async function test() {
     }
 
     const trips = await Seta.getTrips(s, 10);
-    if (Seta.isTripsErr(trips)) {
+    if (isFnErr(trips)) {
         return console.log(trips.err);
     }
     // DEBUG - map to HH:mm

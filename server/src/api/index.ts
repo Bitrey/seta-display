@@ -3,7 +3,7 @@ import express, { ErrorRequestHandler } from "express";
 import { join } from "path";
 import swaggerUi from "swagger-ui-express";
 import { CustomErr } from "../interfaces/CustomErr";
-import { ResErr } from "../interfaces/ResErr";
+import { FnErr } from "../interfaces/FnErr";
 
 import { logger } from "../shared/logger";
 import { specs } from "./config/swagger";
@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
 });
 
 app.all("*", (req, res) => {
-    res.status(404).json({ err: "Not found" } as ResErr);
+    res.status(404).json({ err: "Not found" });
 });
 
 const isCustomErr = (err: unknown): err is CustomErr => {
