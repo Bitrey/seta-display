@@ -6,3 +6,4 @@ dist
 logs/*
 *.debug.js
 *.debug.ts
+frontend/public/test_ads/*
