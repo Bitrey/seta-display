@@ -1,9 +1,7 @@
 import { AxiosInstance } from "axios";
 import moment from "moment-timezone";
 import { Agency } from "../interfaces/Agency";
-import { News } from "../interfaces/News";
 import { Stop } from "../interfaces/Stop";
-import { CustomErr } from "../interfaces/CustomErr";
 import { tripFn } from "../interfaces/tripFn";
 import { newsFn } from "../interfaces/newsFn";
 

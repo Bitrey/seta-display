@@ -5,8 +5,9 @@ export const router = Router();
 
 logger.info("Loading API routes");
 
-import { stopController } from "../controllers/stop";
+import { tripsController } from "../controllers/trips";
 import { timeController } from "../controllers/time";
+import { stopController } from "../controllers/stop";
 
 /**
  * @swagger
@@ -19,44 +20,40 @@ import { timeController } from "../controllers/time";
  *          - stopId
  *        properties:
  *          stopId:
- *            oneOf:
- *              - type: string
- *              - type: array
- *                items:
- *                  type: string
- *            description: Stop code
+ *            type: string
+ *            description: ID of the stop
  *            example: MO2076
  *          agency:
- *            oneOf:
- *              - type: string
- *              - type: array
- *                items:
- *                  type: string
+ *            type: string
  *            description: Name of the agency (all lowercase)
  *            example: seta
- *          limit:
- *            type: integer
- *            minimum: 1
- *            description: Limit the results
- *            example: 10
  */
 
 /**
  * @openapi
  * /api/stop:
- *  post:
+ *  get:
  *    description: Fetch realtime information for a stop
  *    tags:
  *      - api
- *    requestBody:
- *      required: true
- *      content:
- *        application/json:
- *          schema:
- *            $ref: '#/components/schemas/StopReq'
+ *    parameters:
+ *      - in: query
+ *        name: stopId
+ *        description: ID of the stop
+ *        required: true
+ *        schema:
+ *          type: string
+ *          example: MO2076
+ *      - in: query
+ *        name: agency
+ *        description: Name of the agency (all lowercase)
+ *        required: true
+ *        schema:
+ *          type: string
+ *          example: seta
  *    responses:
  *      '200':
- *        description: Realtime info
+ *        description: Stop info
  *        content:
  *          application/json:
  *            schema:
@@ -82,6 +79,76 @@ router.post("/stop", stopController);
  * @swagger
  *  components:
  *    schemas:
+ *      TripsReq:
+ *        type: object
+ *        required:
+ *          - agency
+ *          - stopId
+ *        properties:
+ *          stopId:
+ *            oneOf:
+ *              - type: string
+ *              - type: array
+ *                items:
+ *                  type: string
+ *            description: ID of the stop (can be an array of stopIds)
+ *            example: MO2076
+ *          agency:
+ *            oneOf:
+ *              - type: string
+ *              - type: array
+ *                items:
+ *                  type: string
+ *            description: Name of the agency (all lowercase)
+ *            example: seta
+ *          limit:
+ *            type: integer
+ *            minimum: 1
+ *            description: Limit the results
+ *            example: 10
+ */
+
+/**
+ * @openapi
+ * /api/trips:
+ *  post:
+ *    description: Fetch trips with realtime information
+ *    tags:
+ *      - api
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/TripsReq'
+ *    responses:
+ *      '200':
+ *        description: Array of Trip objects
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/Trip'
+ *      '400':
+ *        description: Bad request
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
+ *      '500':
+ *        description: Server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
+ */
+router.post("/trips", tripsController);
+
+/**
+ * @swagger
+ *  components:
+ *    schemas:
  *      TimeReq:
  *        type: object
  *        required:
@@ -89,7 +156,7 @@ router.post("/stop", stopController);
  *        properties:
  *          agency:
  *            type: string
- *            description: Agency - needed in order to get the correct timezone
+ *            description: Name of the agency (all lowercase)
  *            example: seta
  *          format:
  *            type: string
@@ -101,7 +168,7 @@ router.post("/stop", stopController);
  * @swagger
  *  components:
  *    schemas:
- *      TimeRes:
+ *      Time:
  *        type: object
  *        required:
  *          - time
@@ -109,14 +176,14 @@ router.post("/stop", stopController);
  *          time:
  *            type: string
  *            description: Formatted time
- *            example: MO2076
+ *            example: 09:45
  */
 
 /**
  * @openapi
  * /api/time:
  *  post:
- *    description: Fetch current time on the server
+ *    description: Fetch current time on the server using the agency's timezone
  *    tags:
  *      - api
  *    requestBody:
@@ -127,13 +194,11 @@ router.post("/stop", stopController);
  *            $ref: '#/components/schemas/TimeReq'
  *    responses:
  *      '200':
- *        description: Current time
+ *        description: Current time in specified format
  *        content:
  *          application/json:
  *            schema:
- *              type: array
- *              items:
- *                $ref: '#/components/schemas/TimeRes'
+ *              $ref: '#/components/schemas/Time'
  *      '500':
  *        description: Server error
  *        content:

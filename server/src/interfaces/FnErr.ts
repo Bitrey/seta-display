@@ -11,17 +11,8 @@ import { CustomErr } from "./CustomErr";
  *        properties:
  *          err:
  *            type: object
- *            required:
- *              - msg
- *              - status
+ *            $ref: '#/components/schemas/CustomErr'
  *            description: Error object
- *            properties:
- *              msg:
- *                  type: string
- *                  description: Error message
- *              status:
- *                  type: number
- *                  description: HTTP status code
  */
 
 export interface FnErr {

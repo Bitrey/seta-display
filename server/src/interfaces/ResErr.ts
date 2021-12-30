@@ -10,6 +10,7 @@
  *          err:
  *            type: string
  *            description: Error message
+ *            example: Error while loading data
  */
 
 export interface ResErr {

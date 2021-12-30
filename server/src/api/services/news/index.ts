@@ -6,6 +6,7 @@ import { isFnErr } from "../../../interfaces/FnErr";
 import { News } from "../../../interfaces/News";
 import { newsFnReturn } from "../../../interfaces/newsFn";
 import axios from "axios";
+import { settings } from "../../../settings";
 
 interface NewsReq {
     agencies: string | string[];
@@ -13,8 +14,6 @@ interface NewsReq {
     fromDate?: moment.Moment;
     toDate?: moment.Moment;
 }
-
-const fPath = join(__dirname, "../../../agencies");
 
 export const newsService = async ({
     agencies,
@@ -28,7 +27,8 @@ export const newsService = async ({
     try {
         const p: Promise<newsFnReturn>[] = [];
         for (const agency of agencies) {
-            const Cls = require(join(fPath, agency)).default as typeof Base;
+            const Cls = require(join(settings.agenciesPath, agency))
+                .default as typeof Base;
             if (typeof Cls.getNews === "function") {
                 p.push(Cls.getNews(args));
             }

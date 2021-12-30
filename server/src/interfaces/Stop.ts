@@ -22,6 +22,7 @@ import { Trip } from "./Trip";
  *            type: array
  *            items:
  *              type: string
+ *              example: 25
  *            description: Routes that stop here
  *          additionalInfo:
  *            type: string
@@ -32,18 +33,23 @@ import { Trip } from "./Trip";
  *          coordX:
  *            type: number
  *            description: X coordinate of the stop location
+ *            example: 686344
  *          coordY:
  *            type: number
  *            description: Y coordinate of the stop location
+ *            example: 930918
  *          lat:
  *            type: number
  *            description: Latitude of the stop location
+ *            example: 44.505762
  *          lon:
  *            type: number
  *            description: Longitude of the stop location
+ *            example: 11.343174
  *          zone:
  *            type: string
  *            description: Zone code of the stop
+ *            example: 500
  */
 
 export interface IStop {

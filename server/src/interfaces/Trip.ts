@@ -1,3 +1,102 @@
+/**
+ * @swagger
+ *  components:
+ *    schemas:
+ *      Trip:
+ *        type: object
+ *        required:
+ *          - agencyName
+ *          - tripId
+ *          - shortName
+ *          - longName
+ *          - vehicleType
+ *          - scheduledArrival
+ *          - scheduledDeparture
+ *          - scheduleRelationship
+ *          - realtimeArrival
+ *          - realtimeDeparture
+ *          - maxPassengers
+ *          - vehicleCode
+ *          - canceled
+ *          - backgroundColor
+ *          - textColor
+ *          - minTillArrival
+ *        properties:
+ *          agencyName:
+ *            type: string
+ *            description: Short name of the agency
+ *            example: SETA
+ *          tripId:
+ *            type: string
+ *            description: ID of the trip
+ *            example: MO760-Di-7742-4638671
+ *          shortName:
+ *            type: string
+ *            description: Route number
+ *            example: 760
+ *          longName:
+ *            type: string
+ *            description: Route destination
+ *            example: VIGNOLA
+ *          vehicleType:
+ *            type: integer
+ *            minimum: 0
+ *            maximum: 12
+ *            description: Vehicle type as defined at https://developers.google.com/transit/gtfs/reference#routestxt
+ *            example: 3
+ *          scheduledArrival:
+ *            type: integer
+ *            description: Scheduled arrival time in epoch timestamp
+ *            example: 1640696160
+ *          scheduledDeparture:
+ *            type: integer
+ *            description: Scheduled arrival time in epoch timestamp
+ *            example: 1640696160
+ *          scheduleRelationship:
+ *            type: string
+ *            enum:
+ *              - SCHEDULED
+ *              - SKIPPED
+ *              - NO_DATA
+ *            description: Relationship between scheduled time and realtime as defined at https://developers.google.com/transit/gtfs-realtime/reference#enum-schedulerelationship
+ *            example: SCHEDULED
+ *          realtimeArrival:
+ *            type: integer
+ *            description: Realtime arrival time in epoch timestamp
+ *            example: 1640696160
+ *          realtimeDeparture:
+ *            type: integer
+ *            description: Realtime arrival time in epoch timestamp
+ *            example: 1640696160
+ *          maxPassengers:
+ *            type: integer
+ *            description: Maximum number of passengers allowed on board
+ *            example: 84
+ *          vehicleCode:
+ *            type: string
+ *            description: Vehicle code
+ *            example: 348
+ *          canceled:
+ *            type: boolean
+ *            description: Whether the trip is cancelled
+ *            example: false
+ *          backgroundColor:
+ *            type: string
+ *            format: hex
+ *            description: Custom background color for clients that support it
+ *            example: #1267B7
+ *          textColor:
+ *            type: string
+ *            format: hex
+ *            description: Custom text color for clients that support it
+ *            example: #FFFFFF
+ *          minTillArrival:
+ *            type: integer
+ *            minimum: 0
+ *            description: Minutes till arrival, useful for devices that can't elaborate dates
+ *            example: 1
+ */
+
 export interface Trip {
     tripId?: string;
     agencyName: string;

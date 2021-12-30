@@ -3,13 +3,8 @@
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
 import moment from "moment";
-import { join } from "path";
-import { logger } from "../../../shared/logger";
 import { timeService } from "../../services/time";
 import { getAgencyNames } from "../../shared/getAgencyNames";
-
-const fPath = join(__dirname, "../../agencies");
-logger.info(`Agencies dir path is "${fPath}"`);
 
 export const timeSchema = Joi.object({
     agency: Joi.string()
@@ -54,7 +49,7 @@ export const timeController = async (
 
     const { time, err } = timeService({ agency, format });
     if (err) {
-        return next({ msg: err, status: 500 });
+        return next({ msg: err.msg, status: err.status });
     }
 
     res.json({ time } as { time: string });

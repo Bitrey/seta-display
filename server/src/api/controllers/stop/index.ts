@@ -2,77 +2,33 @@
 
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
-import { join } from "path";
+import moment from "moment";
 import { logger } from "../../../shared/logger";
+import { adsService } from "../../services/ads";
 import { stopService } from "../../services/stop";
 import { getAgencyNames } from "../../shared/getAgencyNames";
-
-const fPath = join(__dirname, "../../agencies");
-logger.info(`Agencies dir path is "${fPath}"`);
+import { getAllStops } from "../../shared/getAllStops";
 
 export const stopSchema = Joi.object({
-    // displayId: Joi.string()
-    //     .min(1)
-    //     .required()
-    //     .custom((v, helper) => {
-    //         // DEBUG: check that displayId exists in the displays database
-    //         return true;
-    //     }),
-    agencies: Joi.array()
+    agency: Joi.string()
         .min(1)
-        .items(
-            Joi.string()
-                .min(1)
-                .required()
-                .custom((v, helper) => {
-                    // prettier-ignore
-                    try {
-                    v = JSON.parse(v);
-                } catch (err) {}
-
-                    if (!getAgencyNames().includes(v)) {
-                        return helper.error("any.error");
-                    }
-                    return true;
-                })
-                .messages({
-                    "string.min": "format must be at least 1 character long",
-                    "any.required": "agencies field is required",
-                    "any.error": "Agency not found"
-                })
-        ),
-    stops: Joi.array()
-        .min(1)
-        .items(
-            Joi.string()
-                .min(1)
-                .required()
-                // this takes too much, check if stops exist in service
-                // .custom((v, helper) => {
-                //     try {
-                //         v = JSON.parse(v);
-                //     } catch (err) {}
-
-                //     if (
-                //         !getAllStops()
-                //             // (console.log(Joi.ref("agencies")), undefined)
-                //             // Joi.ref("agencies").toString())
-                //             .map(e => e.stopId.toString())
-                //             .includes(v.toString())
-                //     ) {
-                //         return helper.error("any.error");
-                //     }
-                //     return true;
-                // })
-                .messages({
-                    "string.min": "format must be at least 1 character long",
-                    "any.required": "stops field is required",
-                    "any.error": "Stop not found"
-                })
-        ),
-    limit: Joi.number()
-        .min(1)
-        .messages({ "number.min": "limit must be at least 1" })
+        .required()
+        .custom((v, helper) => {
+            if (!getAgencyNames().includes(v)) {
+                return helper.error("any.error");
+            }
+            return true;
+        })
+        .messages({
+            "string.min": "agency must be at least 1 character long",
+            "any.required": "agency field is required",
+            "any.error": "Agency not found"
+        }),
+    stopId: Joi.string().min(1).required().messages({
+        "string.min": "stopId must be at least 1 character long",
+        "any.required": "stopId field is required"
+    })
+    // additional validation inside the controller (if stop exists)
 });
 
 export const stopController = async (
@@ -80,36 +36,22 @@ export const stopController = async (
     res: Response,
     next: NextFunction
 ) => {
-    let { agency, stopId, limit } = req.body as {
-        agency: string | string[];
-        stopId: string | string[];
-        limit?: number;
-    };
+    let { agency, stopId } = req.body as { agency: string; stopId: string };
 
-    try {
-        agency = JSON.parse(agency as string);
-    } catch (err) {}
-
-    try {
-        stopId = JSON.parse(stopId as string);
-    } catch (err) {}
-
-    const stops = (Array.isArray(stopId) ? stopId : [stopId]).map(e =>
-        e.toString()
-    );
-    const agencies = Array.isArray(agency) ? agency : [agency];
-
-    const { error } = stopSchema.validate({ stops, agencies, limit });
+    const { error } = stopSchema.validate({ agency, stopId });
     if (error) {
-        logger.debug("Stop controller validation failed");
         return next({ msg: error.message, status: 400 });
+    } else if (getAllStops(agency).findIndex(e => e.stopId === stopId) === -1) {
+        return next({
+            msg: `Stop ${stopId} of agency ${agency} not found`,
+            status: 400
+        });
     }
 
-    const { trips, err } = await stopService({ stops, agencies, limit });
+    const { stop, err } = await stopService({ agency, stopId });
     if (err) {
-        logger.debug("Stop service failed");
-        return next({ msg: err.msg, status: err.status });
+        return next({ msg: err, status: err.status });
     }
 
-    res.json(trips);
+    res.json(stop);
 };

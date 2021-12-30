@@ -1,9 +1,9 @@
 import moment from "moment";
 import { join } from "path";
 import { Base } from "../../../agencies/Base";
+import { CustomErr } from "../../../interfaces/CustomErr";
+import { settings } from "../../../settings";
 import { logger } from "../../../shared/logger";
-
-const fPath = join(__dirname, "../../../agencies");
 
 interface TimeReq {
     agency: string;
@@ -13,9 +13,10 @@ interface TimeReq {
 export const timeService = ({
     agency,
     format
-}: TimeReq): { time?: string; err?: string } => {
+}: TimeReq): { time?: string; err?: CustomErr } => {
     try {
-        const Cls = require(join(fPath, agency)).default as typeof Base;
+        const Cls = require(join(settings.agenciesPath, agency))
+            .default as typeof Base;
         return {
             time: moment()
                 .tz(Cls.agency.timezone)
@@ -23,6 +24,6 @@ export const timeService = ({
         };
     } catch (err) {
         logger.error(err);
-        return { err: "Error while loading time" };
+        return { err: { msg: "Error while loading time", status: 500 } };
     }
 };

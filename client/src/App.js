@@ -73,7 +73,7 @@ function App() {
         async function getTrips() {
             try {
                 setTripsLoaded(false);
-                const { data } = await axios.post("/api/stop", tripsArgs);
+                const { data } = await axios.post("/api/trips", tripsArgs);
                 setTrips(data);
                 setTripsReqErr(null);
                 console.log(data);

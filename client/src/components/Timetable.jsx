@@ -53,7 +53,7 @@ class Timetable extends Component {
     async componentDidMount() {
         try {
             console.log(this.props);
-            const res = await axios.post("/api/stop", {
+            const res = await axios.post("/api/trips", {
                 agency: this.props.agency,
                 stopId: this.props.stopId
             });

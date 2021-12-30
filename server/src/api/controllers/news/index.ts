@@ -2,13 +2,10 @@
 
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
-import { join } from "path";
+import moment from "moment";
 import { logger } from "../../../shared/logger";
 import { newsService } from "../../services/news";
 import { getAgencyNames } from "../../shared/getAgencyNames";
-
-const fPath = join(__dirname, "../../agencies");
-logger.info(`Agencies dir path is "${fPath}"`);
 
 export const newsSchema = Joi.object({
     agencies: Joi.array()
@@ -59,8 +56,8 @@ export const newsController = async (
 ) => {
     let { agency, fromDate, toDate, limit, ...rest } = req.body as {
         agency: string | string[];
-        fromDate?: string;
-        toDate?: string;
+        fromDate?: moment.Moment;
+        toDate?: moment.Moment;
         limit?: number;
     };
 
@@ -81,10 +78,13 @@ export const newsController = async (
         return next({ msg: error.message, status: 400 });
     }
 
+    if (fromDate) fromDate = moment.parseZone(fromDate);
+    if (toDate) toDate = moment.parseZone(toDate);
+
     const { news, err } = await newsService({
         agencies,
-        fromDate: fromDate as any,
-        toDate: toDate as any,
+        fromDate,
+        toDate,
         limit,
         ...rest
     });
