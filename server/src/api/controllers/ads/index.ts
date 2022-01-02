@@ -18,8 +18,8 @@ export const adsSchema = Joi.object({
     agency: Joi.string()
         .min(1)
         .required()
-        .custom(async (v, helper) => {
-            if (!(await getAgencyNames()).includes(v)) {
+        .custom((v, helper) => {
+            if (!getAgencyNames().includes(v)) {
                 return helper.error("any.error");
             }
             return true;

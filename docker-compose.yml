@@ -1,32 +1,15 @@
-version: "3.9" # optional since v1.27.0
+version: "3.9"  # optional since v1.27.0
 services:
-    redis:
-        image: redis
-        networks:
-            - backend
-    backend:
-        build: server
-        ports:
-            - "5000:5000"
-        networks:
-            - backend
-        volumes:
-            - ./server:/app
-            - backend-node_modules:/app/node_modules
-    frontend:
-        build: client
-        ports:
-            - "3000:3000"
-        networks:
-            - backend
-            - frontend
-        volumes:
-            - ./client:/app
-            - frontend-node_modules:/app/node_modules
-
-networks:
-    frontend: {}
-    backend: {}
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/code
+      - logvolume01:/var/log
+    links:
+      - redis
+  redis:
+    image: redis
 volumes:
-    backend-node_modules: {}
-    frontend-node_modules: {}
+  logvolume01: {}

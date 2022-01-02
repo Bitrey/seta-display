@@ -1,21 +1,18 @@
 import axios from "axios";
 import moment from "moment-timezone";
+import https from "https";
 import { join } from "path";
-import { readFile } from "fs";
-import { cwd, platform } from "process";
+import { readFileSync } from "fs";
+import { cwd } from "process";
 import cheerio from "cheerio";
 import { logger } from "../../shared/logger";
 import { Trip } from "../../interfaces/Trip";
+import { Stop } from "../../interfaces/Stop";
 import { Agency } from "../../interfaces/Agency";
 import { tripFn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
 import { News } from "../../interfaces/News";
 import { newsFn } from "../../interfaces/newsFn";
-import { exec } from "child_process";
-import { promisify } from "util";
-import { redis } from "../../api/db";
-import { Stop } from "../../interfaces/Stop";
-import { Agent } from "https";
 
 interface _SetaRes {
     arrival: {
@@ -56,37 +53,17 @@ export class Seta implements Base {
         url: "https://www.setaweb.it/mo/"
     };
 
-    public static async getStopIds() {
-        if (redis.isConnected) {
-            const c = await redis.client.sMembers(
-                redis.getStopIdsKey(this.agency)
-            );
-            if (c.length !== 0) return c;
-        }
-
-        const readFileES6 = promisify(readFile);
-
-        const f = await readFileES6(
-            join(cwd(), "./agency_files/seta/stops.json"),
-            {
+    static get stops(): Stop[] {
+        return JSON.parse(
+            readFileSync(join(cwd(), "./agency_files/seta/stops.json"), {
                 encoding: "utf-8"
-            }
+            })
         );
-        const stopIds = (<Stop[]>JSON.parse(f)).map(e => e.stopId);
-
-        if (redis.isConnected) {
-            await redis.client.sAdd(redis.getStopIdsKey(this.agency), stopIds);
-        } else {
-            logger.error("Can't cache SETA stops: not connected to Redis");
-        }
-
-        return stopIds;
     }
 
     private static _instance = axios.create({
         baseURL: "https://avm.setaweb.it/SETA_WS/services/arrival/",
-        timeout: 10000,
-        httpsAgent: new Agent({ rejectUnauthorized: false })
+        timeout: 10000
     });
 
     public static getNews: newsFn = async ({
@@ -95,22 +72,19 @@ export class Seta implements Base {
         bacino: string | null;
     }) => {
         let data;
-
-        const execES6 = promisify(exec);
-
+        const httpsAgent = new https.Agent({ rejectUnauthorized: false });
         try {
             const _bacino: "mo" | "re" | "pc" | null =
                 !!bacino && ["mo", "re", "pc"].includes(bacino)
                     ? (bacino as any)
                     : null;
-            const _url = _bacino
-                ? `https://www.setaweb.it/${_bacino}/news`
-                : "https://www.setaweb.it/news";
-
-            data =
-                platform === "linux"
-                    ? (await execES6(`curl -s -k '${_url}'`)).stdout
-                    : (await this._instance.get(_url)).data;
+            const res = await axios.get(
+                _bacino
+                    ? `https://www.setaweb.it/${_bacino}/news`
+                    : "https://www.setaweb.it/news",
+                { httpsAgent }
+            );
+            data = res.data;
         } catch (err) {
             logger.error("Error while fetching SETA news");
             logger.error(

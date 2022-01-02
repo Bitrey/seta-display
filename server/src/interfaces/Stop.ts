@@ -52,7 +52,7 @@ import { Trip } from "./Trip";
  *            example: 500
  */
 
-export interface Stop {
+export interface IStop {
     stopId: string;
     stopName: string;
     routes?: string[];
@@ -65,18 +65,29 @@ export interface Stop {
     zone?: string;
 }
 
-export interface RedisStop
-    extends Omit<Stop, "routes" | "coordX" | "coordY" | "lat" | "lon"> {
-    routesSetName?: string;
-    coordX?: string;
-    coordY?: string;
-    lat?: string;
-    lon?: string;
-}
+export class Stop implements IStop {
+    stopId: string;
+    stopName: string;
+    routes?: string[];
+    additionalInfo?: string;
+    visibleFields?: (keyof Trip)[];
+    platform?: string;
+    coordX?: number;
+    coordY?: number;
+    lat?: number;
+    lon?: number;
+    zone?: string;
 
-export function isStop(stop: unknown): stop is Stop {
-    if (!stop || typeof stop !== "object") return false;
-    const s: Stop = stop as any;
-    return typeof s.stopId === "string" && typeof s.stopName === "string";
-    // DEBUG: continue this if needed
+    constructor(s: IStop) {
+        this.stopId = s.stopId;
+        this.stopName = s.stopName;
+        this.routes = s.routes;
+        this.additionalInfo = s.additionalInfo;
+        this.platform = s.platform;
+        this.coordX = s.coordX;
+        this.coordY = s.coordY;
+        this.lat = s.lat;
+        this.lon = s.lon;
+        this.zone = s.zone;
+    }
 }
