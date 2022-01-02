@@ -14,13 +14,12 @@ export const newsSchema = Joi.object({
             Joi.string()
                 .min(1)
                 .required()
-                .custom((v, helper) => {
-                    // prettier-ignore
+                .custom(async (v, helper) => {
                     try {
-                    v = JSON.parse(v);
-                } catch (err) {}
+                        v = JSON.parse(v);
+                    } catch (err) {}
 
-                    if (!getAgencyNames().includes(v)) {
+                    if (!(await getAgencyNames()).includes(v)) {
                         return helper.error("any.error");
                     }
                     return true;

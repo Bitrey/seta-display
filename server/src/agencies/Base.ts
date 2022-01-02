@@ -7,10 +7,11 @@ import { newsFn } from "../interfaces/newsFn";
 
 export abstract class Base {
     public static agency: Agency;
-    public static stops: Stop[];
     private static _instance: AxiosInstance;
     public static getTrips: tripFn;
     public static getNews: newsFn;
+    public static getStopIds: () => Promise<string[]>;
+    public static getStop: (stopId: string) => Promise<Stop>;
 
     public static getTime() {
         return moment();

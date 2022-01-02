@@ -1,5 +1,4 @@
 import axios, { AxiosResponse } from "axios";
-import { readFileSync } from "fs";
 import { join } from "path";
 import { parseStringPromise } from "xml2js";
 import { cwd } from "process";
@@ -13,6 +12,10 @@ import { Base } from "../Base";
 import { Trip } from "../../interfaces/Trip";
 import { newsFn } from "../../interfaces/newsFn";
 import { News } from "../../interfaces/News";
+import { Agent } from "https";
+import { promisify } from "util";
+import { readFile } from "fs";
+import { redis } from "../../api/db";
 
 // type _TperSingleRes = `TperHellobus: ${string} ${| "Previsto"
 //     | "DaSatellite"} ${number}:${number}`;
@@ -43,17 +46,35 @@ export class Tper implements Base {
         url: "https://www.tper.it/"
     };
 
-    static get stops(): Stop[] {
-        return JSON.parse(
-            readFileSync(join(cwd(), "./agency_files/tper/stops.json"), {
+    public static async getStopIds() {
+        if (redis.isConnected) {
+            const c = await redis.getStopIds(this.agency);
+            if (c && c.length !== 0) return c;
+        }
+
+        const readFileES6 = promisify(readFile);
+
+        const f = await readFileES6(
+            join(cwd(), "./agency_files/tper/stops.json"),
+            {
                 encoding: "utf-8"
-            })
+            }
         );
+        const stopIds = (<Stop[]>JSON.parse(f)).map(e => e.stopId);
+
+        if (redis.isConnected) {
+            await redis.saveStopIds(this.agency, stopIds);
+        } else {
+            logger.error("Can't cache TPER stops: not connected to Redis");
+        }
+
+        return stopIds;
     }
 
     private static _instance = axios.create({
         baseURL: "https://hellobuswsweb.tper.it/web-services/hello-bus.asmx",
-        timeout: 10000
+        timeout: 10000,
+        httpsAgent: new Agent({ rejectUnauthorized: false })
     });
 
     private static _getNewsUrl(type: NewsType): string {
@@ -72,7 +93,8 @@ export class Tper implements Base {
                     ? "438"
                     : type === "contrassegniSosta"
                     ? "437"
-                    : console.error("NewsType non valido in getNews TPER", "33")
+                    : (logger.error("NewsType non valido in getNews TPER"),
+                      "33")
             }/all/rss.xml`;
     }
 
@@ -81,26 +103,52 @@ export class Tper implements Base {
             return { err: { msg: "Invalid TPER news type", status: 400 } };
         }
 
-        const parser = new Parser();
-        const feed = await parser.parseURL(Tper._getNewsUrl(type));
-        const news: News[] = [];
+        try {
+            const parser = new Parser();
+            const res = await this._instance.get(Tper._getNewsUrl(type));
+            const feed = await parser.parseString(res.data);
+            // const feed = await parser.parseURL(Tper._getNewsUrl(type));
+            const news: News[] = [];
 
-        feed.items.forEach((item: any) => {
-            if (!item.title) return;
-            news.push({
-                agency: this.agency.name,
-                date: moment.parseZone(item.isoDate),
-                title: item.title
+            feed.items.forEach((item: any) => {
+                if (!item.title) return;
+                news.push({
+                    agency: this.agency.name,
+                    date: moment.parseZone(item.isoDate),
+                    title: item.title
+                });
             });
-        });
 
-        return news;
+            return news;
+        } catch (err) {
+            logger.error("Error while fetching TPER news");
+            logger.error(err);
+            throw err;
+        }
     };
 
-    public static getTrips: tripFn = async (stop, maxResults) => {
+    public static getTrips: tripFn = async stopId => {
         let trips: Trip[] | null = null;
         let rawData: any;
-        if (!stop.routes) {
+
+        let routes = await redis.getRoutes(this.agency, stopId);
+        if (!routes) {
+            const readFileES6 = promisify(readFile);
+
+            const f = await readFileES6(
+                join(cwd(), "./agency_files/tper/stops.json"),
+                {
+                    encoding: "utf-8"
+                }
+            );
+            routes =
+                (<Stop[]>JSON.parse(f)).find(e => e.stopId === stopId)
+                    ?.routes || null;
+
+            if (routes) await redis.saveRoutes(this.agency, stopId, routes);
+        }
+
+        if (!routes) {
             logger.error("TPER stop.routes not defined");
             return { err: { msg: "Error while loading data", status: 500 } };
         }
@@ -108,11 +156,11 @@ export class Tper implements Base {
         try {
             const responses: (AxiosResponse<string> | Error)[] =
                 await Promise.all(
-                    stop.routes.map(route => {
+                    routes.map(route => {
                         const res = this._instance
                             .get("/QueryHellobus", {
                                 params: {
-                                    fermata: stop.stopId,
+                                    fermata: stopId,
                                     linea: route,
                                     oraHHMM: " "
                                 }
@@ -136,7 +184,7 @@ export class Tper implements Base {
                                 return err as Error;
                             });
                         logger.debug(
-                            `TPER data fetched for stop ${stop.stopId} - line ${route}`
+                            `TPER data fetched for stop ${stopId} - line ${route}`
                         );
                         return res;
                     })
@@ -219,6 +267,9 @@ export class Tper implements Base {
                         })
                         .filter(e => !!e);
                 } catch (err) {
+                    logger.error(
+                        "Error while parsing TPER QueryHellobus response"
+                    );
                     logger.error(err);
                     return {
                         err: { msg: "Error while loading data", status: 500 }
@@ -265,12 +316,14 @@ export class Tper implements Base {
                     }
                 });
             } catch (err) {
+                logger.error("Error while parsing TPER QueryAllBusLd response");
                 logger.error(err);
             }
 
             trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
             return trips;
         } catch (err) {
+            logger.error("TPER getTrips error");
             logger.error(err);
             return { err: { msg: "Error while loading data", status: 500 } };
         }

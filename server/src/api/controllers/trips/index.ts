@@ -20,13 +20,12 @@ export const tripsSchema = Joi.object({
             Joi.string()
                 .min(1)
                 .required()
-                .custom((v, helper) => {
-                    // prettier-ignore
+                .custom(async (v, helper) => {
                     try {
-                    v = JSON.parse(v);
-                } catch (err) {}
+                        v = JSON.parse(v);
+                    } catch (err) {}
 
-                    if (!getAgencyNames().includes(v)) {
+                    if (!(await getAgencyNames()).includes(v)) {
                         return helper.error("any.error");
                     }
                     return true;
@@ -40,31 +39,11 @@ export const tripsSchema = Joi.object({
     stops: Joi.array()
         .min(1)
         .items(
-            Joi.string()
-                .min(1)
-                .required()
-                // this takes too much, check if stops exist in service
-                // .custom((v, helper) => {
-                //     try {
-                //         v = JSON.parse(v);
-                //     } catch (err) {}
-
-                //     if (
-                //         !getAllStops()
-                //             // (console.log(Joi.ref("agencies")), undefined)
-                //             // Joi.ref("agencies").toString())
-                //             .map(e => e.stopId.toString())
-                //             .includes(v.toString())
-                //     ) {
-                //         return helper.error("any.error");
-                //     }
-                //     return true;
-                // })
-                .messages({
-                    "string.min": "format must be at least 1 character long",
-                    "any.required": "stops field is required",
-                    "any.error": "Stop not found"
-                })
+            Joi.string().min(1).required().messages({
+                "string.min": "format must be at least 1 character long",
+                "any.required": "stops field is required",
+                "any.error": "Stop not found"
+            })
         ),
     limit: Joi.number()
         .min(1)

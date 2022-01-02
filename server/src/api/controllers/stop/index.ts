@@ -2,9 +2,6 @@
 
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
-import moment from "moment";
-import { logger } from "../../../shared/logger";
-import { adsService } from "../../services/ads";
 import { stopService } from "../../services/stop";
 import { getAgencyNames } from "../../shared/getAgencyNames";
 import { getAllStops } from "../../shared/getAllStops";
@@ -13,8 +10,8 @@ export const stopSchema = Joi.object({
     agency: Joi.string()
         .min(1)
         .required()
-        .custom((v, helper) => {
-            if (!getAgencyNames().includes(v)) {
+        .custom(async (v, helper) => {
+            if (!(await getAgencyNames()).includes(v)) {
                 return helper.error("any.error");
             }
             return true;
@@ -41,7 +38,7 @@ export const stopController = async (
     const { error } = stopSchema.validate({ agency, stopId });
     if (error) {
         return next({ msg: error.message, status: 400 });
-    } else if (getAllStops(agency).findIndex(e => e.stopId === stopId) === -1) {
+    } else if (!(await getAllStops(agency)).includes(stopId)) {
         return next({
             msg: `Stop ${stopId} of agency ${agency} not found`,
             status: 400

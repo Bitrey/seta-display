@@ -1,7 +1,7 @@
 import { logger } from "../../../shared/logger";
 import { CustomErr } from "../../../interfaces/CustomErr";
-import { IStop } from "../../../interfaces/Stop";
 import { getAllStops } from "../../shared/getAllStops";
+import { Stop } from "../../../interfaces/Stop";
 
 interface StopReq {
     agency: string;
@@ -11,9 +11,9 @@ interface StopReq {
 export const stopService = async ({
     agency,
     stopId
-}: StopReq): Promise<{ stop?: IStop; err?: CustomErr }> => {
+}: StopReq): Promise<{ stop?: Stop; err?: CustomErr }> => {
     try {
-        const stop = getAllStops(agency).find(s => s.stopId === stopId);
+        const stop = (await getAllStops(agency)).find(s => s === stopId);
         if (!stop) throw new ReferenceError();
         return { stop };
     } catch (err) {

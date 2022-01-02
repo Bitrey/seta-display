@@ -27,9 +27,9 @@ export const tripsService = async ({
         for (const agency of agencies) {
             const Cls = require(join(settings.agenciesPath, agency))
                 .default as typeof Base;
+            const agencyStops = await Cls.getStopIds();
             for (const _stopId of stops) {
-                const s = Cls.stops.find(e => e.stopId.toString() === _stopId);
-                if (!s) {
+                if (!agencyStops.includes(_stopId)) {
                     logger.debug(
                         "stopId " +
                             _stopId +
@@ -40,7 +40,7 @@ export const tripsService = async ({
                     stopsNotFound.push(_stopId);
                     continue;
                 }
-                p.push(Cls.getTrips(s, 10));
+                p.push(Cls.getTrips(_stopId, 10));
                 C.push(Cls);
             }
         }

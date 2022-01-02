@@ -4,16 +4,16 @@ import { Stop } from "../../interfaces/Stop";
 import { settings } from "../../settings";
 import { logger } from "../../shared/logger";
 
-export const getAllStops = (agencyName?: string): Stop[] => {
+export const getAllStops = async (agencyName?: string): Promise<string[]> => {
     const agencies = Array.isArray(agencyName) ? agencyName : [agencyName];
-    const stops: Stop[] = [];
+    const stops: string[] = [];
 
     try {
-        agencies.forEach(a => {
+        for (const a of agencies) {
             const Cls = require(join(settings.agenciesPath, a))
                 .default as typeof Base;
-            stops.push(...Cls.stops);
-        });
+            stops.push(...(await Cls.getStopIds()));
+        }
     } catch (err) {
         logger.error("Error in getAllStops");
         logger.error(err);

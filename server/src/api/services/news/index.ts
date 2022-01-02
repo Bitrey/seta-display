@@ -67,6 +67,7 @@ export const newsService = async ({
                 )
         };
     } catch (err) {
+        logger.error("Error while running news service");
         logger.error(err);
         return {
             err: {

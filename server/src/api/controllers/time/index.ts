@@ -10,8 +10,8 @@ export const timeSchema = Joi.object({
     agency: Joi.string()
         .min(1)
         .required()
-        .custom((v, helper) => {
-            if (!getAgencyNames().includes(v)) {
+        .custom(async (v, helper) => {
+            if (!(await getAgencyNames()).includes(v)) {
                 return helper.error("any.error");
             }
             return true;
