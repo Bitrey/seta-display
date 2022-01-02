@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from "axios";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { parseStringPromise } from "xml2js";
-import { cwd } from "process";
+import { cwd, platform } from "process";
 import moment from "moment-timezone";
 import Parser from "rss-parser";
 import { logger } from "../../shared/logger";
@@ -13,6 +13,9 @@ import { Base } from "../Base";
 import { Trip } from "../../interfaces/Trip";
 import { newsFn } from "../../interfaces/newsFn";
 import { News } from "../../interfaces/News";
+import { Agent } from "https";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 // type _TperSingleRes = `TperHellobus: ${string} ${| "Previsto"
 //     | "DaSatellite"} ${number}:${number}`;
@@ -72,7 +75,8 @@ export class Tper implements Base {
                     ? "438"
                     : type === "contrassegniSosta"
                     ? "437"
-                    : console.error("NewsType non valido in getNews TPER", "33")
+                    : (logger.error("NewsType non valido in getNews TPER"),
+                      "33")
             }/all/rss.xml`;
     }
 
@@ -81,18 +85,30 @@ export class Tper implements Base {
             return { err: { msg: "Invalid TPER news type", status: 400 } };
         }
 
-        const parser = new Parser();
-        const feed = await parser.parseURL(Tper._getNewsUrl(type));
         const news: News[] = [];
+        try {
+            // const execES6 = promisify(exec);
+            const data = (await this._instance.get(Tper._getNewsUrl(type)))
+                .data;
+            // platform === "linux"
+            // ? (await execES6("curl -s -k " + Tper._getNewsUrl(type)))
+            //   .stdout :
 
-        feed.items.forEach((item: any) => {
-            if (!item.title) return;
-            news.push({
-                agency: this.agency.name,
-                date: moment.parseZone(item.isoDate),
-                title: item.title
+            const parser = new Parser();
+            const feed = await parser.parseString(data);
+
+            feed.items.forEach((item: any) => {
+                if (!item.title) return;
+                news.push({
+                    agency: this.agency.name,
+                    date: moment.parseZone(item.isoDate),
+                    title: item.title
+                });
             });
-        });
+        } catch (err) {
+            logger.error("Error while fetching TPER news");
+            logger.error(err);
+        }
 
         return news;
     };
@@ -219,6 +235,7 @@ export class Tper implements Base {
                         })
                         .filter(e => !!e);
                 } catch (err) {
+                    logger.error("Error while fetching TPER routes");
                     logger.error(err);
                     return {
                         err: { msg: "Error while loading data", status: 500 }
