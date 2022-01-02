@@ -22,7 +22,7 @@ const AdBanner = ({ img, name, description, className }) => {
 
             <div className="flex flex-col mb-2 ml-6 lg:mb-0 lg:ml-0 lg:mt-4">
                 <p className="text-gray-700 text-3xl">
-                    Pianifica il tuo viaggio
+                    Pianifica il tuo viaggiox
                 </p>
                 <p className="text-black mt-2 max-w-sm">
                     Lorem ipsum dolor, sit amet consectetur adipisicing elit. A

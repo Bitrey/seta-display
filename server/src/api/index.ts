@@ -31,10 +31,10 @@ app.use(express.static(join(__dirname, "../../frontend/public")));
 app.use("/api", routes);
 
 // DEBUG
-logger.warn("Using frontend route");
-app.get("/", (req, res) => {
-    res.sendFile(join(__dirname, "../../frontend/index.html"));
-});
+// logger.warn("Using frontend route");
+// app.get("/", (req, res) => {
+//     res.sendFile(join(__dirname, "../../frontend/index.html"));
+// });
 
 app.all("*", (req, res) => {
     res.status(404).json({ err: "Not found" });
