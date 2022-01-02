@@ -7,8 +7,6 @@ WORKDIR /app
 ENV PATH /app/node_modules/.bin:$PATH
 
 # Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
 COPY package*.json ./
 
 RUN npm install
@@ -18,7 +16,7 @@ COPY . .
 
 EXPOSE 5000
 
-CMD [ "nodemon" ]
+ENV IP 0.0.0.0
+ENV PORT 5000
 
-
-# concurrently "npm run dev --prefix ./server" "yarn --cwd ./client start"
+CMD [ "npm", "run", "dev" ]
