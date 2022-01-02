@@ -18,8 +18,10 @@ EXPOSE 5000
 
 ENV IP 0.0.0.0
 ENV PORT 5000
+<<<<<<< HEAD
 
 CMD [ "npm", "run", "dev" ]
+=======
+>>>>>>> 39ae27ad67f6b68ee932df76124234340a776029
 
-
-# concurrently "npm run dev --prefix ./server" "yarn --cwd ./client start"
+CMD [ "npm", "run", "dev" ]
