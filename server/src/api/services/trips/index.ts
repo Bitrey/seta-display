@@ -69,13 +69,17 @@ export const tripsService = async ({
         const tripReturns = await Promise.all(p.map(e => e[1]));
 
         for (const [i, t] of tripReturns.entries()) {
+            const stopId = p[i][0].stopId;
+
             if (isFnErr(t)) {
                 errs.add(t.err);
+                if (t.err.status >= 400) {
+                    // Rrror, trips were not fetched
+                    delete tripsToBeCached[stopId];
+                }
             } else {
                 // Trip successfully fetched
                 trips.push(...t);
-
-                const stopId = p[i][0].stopId;
                 tripsToBeCached[stopId].push(...t);
             }
         }
