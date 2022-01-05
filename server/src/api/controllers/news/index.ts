@@ -4,7 +4,7 @@ import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
 import moment from "moment";
 import { logger } from "../../../shared/logger";
-import { newsService } from "../../services/news";
+import { NewsService } from "../../services/news";
 import { getAgencyNames } from "../../shared/getAgencyNames";
 
 export const newsSchema = Joi.object({
@@ -75,13 +75,16 @@ export const newsController = async (
     });
     if (error) {
         logger.debug("News controller validation failed");
-        return next({ msg: error.message, status: 400 });
+        return next({
+            msg: error.message || "Data validation failed",
+            status: 400
+        });
     }
 
     if (fromDate) fromDate = moment.parseZone(fromDate);
     if (toDate) toDate = moment.parseZone(toDate);
 
-    const { news, err } = await newsService({
+    const { news, err } = await NewsService.service({
         agencies,
         fromDate,
         toDate,
@@ -90,7 +93,10 @@ export const newsController = async (
     });
     if (err) {
         logger.debug("News service failed");
-        return next({ msg: err.msg, status: err.status });
+        return next({
+            msg: err.msg || "Error while loading data",
+            status: err.status || 500
+        });
     }
 
     res.json(news);

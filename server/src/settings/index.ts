@@ -5,5 +5,7 @@ export const settings = {
     agenciesPath: join(__dirname, "../agencies"),
     agencyFilesPath: join(__dirname, "../../agency_files"),
     stopsCacheTimeMin: 60,
-    adsCacheTimeMin: 60
+    adsCacheTimeMin: 30,
+    newsCacheTimeMin: 3,
+    redisCacheSec: 45
 };

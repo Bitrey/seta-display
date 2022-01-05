@@ -44,12 +44,18 @@ export const timeController = async (
 
     const { error } = timeSchema.validate({ agency, format });
     if (error) {
-        return next({ msg: error.message, status: 400 });
+        return next({
+            msg: error.message || "Data validation failed",
+            status: 400
+        });
     }
 
     const { time, err } = timeService({ agency, format });
     if (err) {
-        return next({ msg: err.msg, status: err.status });
+        return next({
+            msg: err.msg || "Error while loading data",
+            status: err.status || 500
+        });
     }
 
     res.json({ time } as { time: string });

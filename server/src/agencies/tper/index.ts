@@ -55,6 +55,7 @@ export class Tper implements Base {
             moment().diff(Tper._lastStopReadDate, "minutes") >=
                 settings.stopsCacheTimeMin
         ) {
+            logger.debug("Caching TPER stops");
             Tper._stops = JSON.parse(
                 readFileSync(join(cwd(), "./agency_files/tper/stops.json"), {
                     encoding: "utf-8"

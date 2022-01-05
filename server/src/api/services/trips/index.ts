@@ -6,11 +6,17 @@ import { CustomErr } from "../../../interfaces/CustomErr";
 import { tripFnReturn } from "../../../interfaces/tripFn";
 import { isFnErr } from "../../../interfaces/FnErr";
 import { settings } from "../../../settings";
+import { Redis } from "../../../db";
+import { Stop } from "../../../interfaces/Stop";
 
 interface TripsReq {
     agencies: string | string[];
-    stops: string | string[];
+    stops: string[];
     limit?: number;
+}
+
+interface _TripsToBeCached {
+    [stopId: string]: Trip[];
 }
 
 export const tripsService = async ({
@@ -19,16 +25,32 @@ export const tripsService = async ({
     limit
 }: TripsReq): Promise<{ trips?: Trip[]; err?: CustomErr }> => {
     const trips: Trip[] = [];
+
+    for (let i = 0; i < stops.length; i++) {
+        const stopCache = await Redis.getCachedTrips(stops[i]);
+        if (stopCache !== null) {
+            logger.debug(`Trips for stopId ${stops[i]} are cached`);
+            trips.push(...stopCache);
+            stops.splice(i, 1); // remove from stops to be fetched
+            i--;
+        } else {
+            logger.debug("Cache empty for stopId " + stops[i]);
+        }
+    }
     const errs: Set<CustomErr> = new Set(); // to prevent same error
+
     try {
+        const tripsToBeCached: _TripsToBeCached = {};
+
         let stopsNotFound = [];
-        const p: Promise<tripFnReturn>[] = [];
-        const C: typeof Base[] = [];
+        const p: [stop: Stop, trips: Promise<tripFnReturn>][] = [];
+
         for (const agency of agencies) {
             const Cls = require(join(settings.agenciesPath, agency))
                 .default as typeof Base;
+
             for (const _stopId of stops) {
-                const s = Cls.stops.find(e => e.stopId.toString() === _stopId);
+                const s = Cls.stops.find(e => e.stopId === _stopId);
                 if (!s) {
                     logger.debug(
                         "stopId " +
@@ -40,18 +62,24 @@ export const tripsService = async ({
                     stopsNotFound.push(_stopId);
                     continue;
                 }
-                p.push(Cls.getTrips(s, 10));
-                C.push(Cls);
+                tripsToBeCached[s.stopId] = [];
+                p.push([s, Cls.getTrips(s, 10)]);
             }
         }
-        const tripReturns = await Promise.all(p);
-        tripReturns.forEach((t, i) => {
+        const tripReturns = await Promise.all(p.map(e => e[1]));
+
+        for (const [i, t] of tripReturns.entries()) {
             if (isFnErr(t)) {
                 errs.add(t.err);
             } else {
+                // Trip successfully fetched
                 trips.push(...t);
+
+                const stopId = p[i][0].stopId;
+                tripsToBeCached[stopId].push(...t);
             }
-        });
+        }
+
         if (stopsNotFound.length > 0) {
             const _s: string[] = [];
             for (const s of stopsNotFound) {
@@ -67,15 +95,32 @@ export const tripsService = async ({
             }
         }
 
+        if (Object.keys(tripsToBeCached).length > 0) {
+            logger.debug(
+                `Caching trips for ${Object.keys(tripsToBeCached).length} stops`
+            );
+
+            const p = [];
+            for (const stopId in tripsToBeCached) {
+                p.push(Redis.cacheTrips(stopId, tripsToBeCached[stopId]));
+            }
+            const r = await Promise.all(p);
+            if (!r.every(v => !!v)) {
+                logger.warn("Error while caching trips");
+            }
+        }
+
         trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
+
         if (trips.length === 0) {
             if (errs.size === 0) {
-                logger.debug("No trips and " + errs.size + " errors");
-                throw new Error("Error while loading data");
-            } /* if ([...errs].find(e => e.status < 400))*/ else {
-                logger.debug("No trips and no errors");
-                throw new Error([...errs].map(e => e.msg).join(", "));
+                return {
+                    err: { msg: "No trip planned", status: 200 }
+                };
             }
+            // if ([...errs].find(e => e.status < 400))*/
+            logger.debug("No trips and " + errs.size + " errors");
+            throw new Error([...errs].map(e => e.msg).join(", "));
         }
 
         return { trips: trips.slice(0, limit || undefined) };

@@ -72,8 +72,6 @@ export class Seta implements Base {
                 })
             ) as Stop[];
             Seta._lastStopReadDate = moment();
-        } else {
-            logger.debug("SETA stops already cached");
         }
 
         return Seta._stops;

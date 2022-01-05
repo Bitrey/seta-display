@@ -37,7 +37,10 @@ export const stopController = async (
 
     const { error } = stopSchema.validate({ agency, stopId });
     if (error) {
-        return next({ msg: error.message, status: 400 });
+        return next({
+            msg: error.message || "Data validation failed",
+            status: 400
+        });
     } else if (getAllStops(agency).findIndex(e => e.stopId === stopId) === -1) {
         return next({
             msg: `Stop ${stopId} of agency ${agency} not found`,
@@ -47,7 +50,10 @@ export const stopController = async (
 
     const { stop, err } = await stopService({ agency, stopId });
     if (err) {
-        return next({ msg: err.msg, status: err.status });
+        return next({
+            msg: err.msg || "Error while loading data",
+            status: err.status || 500
+        });
     }
 
     res.json(stop);

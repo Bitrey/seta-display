@@ -56,7 +56,10 @@ export const adsController = async (
 
     const { error } = adsSchema.validate({ agency, fromDate, toDate, limit });
     if (error) {
-        return next({ msg: error.message, status: 400 });
+        return next({
+            msg: error.message || "Data validation failed",
+            status: 400
+        });
     }
 
     if (fromDate) fromDate = moment.parseZone(fromDate);
@@ -69,7 +72,10 @@ export const adsController = async (
         limit
     });
     if (err) {
-        return next({ msg: err.msg, status: err.status });
+        return next({
+            msg: err.msg || "Error while loading data",
+            status: err.status || 500
+        });
     }
 
     res.json(ads);

@@ -16,9 +16,6 @@ COPY . .
 
 EXPOSE 5000
 
-ENV IP 0.0.0.0
-ENV PORT 5000
-
 # TPER news server has bad TSL signature, unfortunately this is necessary
 # RUN sed -i 's/CipherString = DEFAULT@SECLEVEL=2/CipherString = DEFAULT@SECLEVEL=1/g' openssl.cnf
 
