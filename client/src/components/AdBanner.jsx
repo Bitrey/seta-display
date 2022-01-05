@@ -12,11 +12,13 @@ const AdBanner = ({ img, name, description, className }) => {
                     src="/img/moovit2.png"
                     alt="Moovit"
                     className="w-full max-w-xs object-contain mr-3"
+                    loading="lazy"
                 />
                 <img
                     src="/img/download-app.png"
                     alt="Download app"
                     className="max-h-24 object-contain ml-3"
+                    loading="lazy"
                 />
             </div>
 

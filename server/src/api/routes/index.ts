@@ -8,6 +8,74 @@ logger.info("Loading API routes");
 import { tripsController } from "../controllers/trips";
 import { timeController } from "../controllers/time";
 import { stopController } from "../controllers/stop";
+import { adsController } from "../controllers/ads";
+
+/**
+ * @swagger
+ *  components:
+ *    schemas:
+ *      AdsReq:
+ *        type: object
+ *        required:
+ *          - agency
+ *        properties:
+ *          agency:
+ *            type: string
+ *            description: Name of the agency (all lowercase)
+ *            example: seta
+ *          fromDate:
+ *            type: string
+ *            format: date
+ *            description: Starting ISO 8601 date to filter ads
+ *            example: 2021-12-25T14:31:23.704Z
+ *          toDate:
+ *            type: string
+ *            format: date
+ *            description: Finishing ISO 8601 date to filter ads
+ *            example: 2021-12-27T14:31:23.704Z
+ *          limit:
+ *            type: integer
+ *            minimum: 1
+ *            description: Limit the results
+ *            example: 10
+ */
+
+/**
+ * @openapi
+ * /api/ads:
+ *  post:
+ *    description: Fetch ads for a specific agency
+ *    tags:
+ *      - api
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            $ref: '#/components/schemas/AdsReq'
+ *    responses:
+ *      '200':
+ *        description: Ads
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/Ad'
+ *      '400':
+ *        description: Bad request
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
+ *      '500':
+ *        description: Server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/ResErr'
+ */
+router.post("/ads", adsController);
 
 /**
  * @swagger

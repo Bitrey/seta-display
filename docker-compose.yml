@@ -1,9 +1,9 @@
 version: "3.9" # optional since v1.27.0
 services:
-    # redis:
-    #     image: redis
-    #     networks:
-    #         - backend
+    redis:
+        image: redis
+        networks:
+            - backend
     backend:
         build: server
         ports:

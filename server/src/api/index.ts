@@ -3,7 +3,7 @@ import express, { ErrorRequestHandler } from "express";
 import { join } from "path";
 import swaggerUi from "swagger-ui-express";
 import { CustomErr } from "../interfaces/CustomErr";
-import { FnErr } from "../interfaces/FnErr";
+import { FnErr, isFnErr } from "../interfaces/FnErr";
 
 import { logger } from "../shared/logger";
 import { specs } from "./config/swagger";
@@ -68,6 +68,8 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
         return res
             .status(err.status || 400)
             .json({ err: "Error while parsing request body" });
+    } else if (isFnErr(err)) {
+        return res.status(err.err.status).json({ err: err.err.msg });
     } else {
         logger.debug("NOT custom error:");
         logger.error(err);

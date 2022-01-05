@@ -77,6 +77,7 @@ export const tripsService = async ({
                 throw new Error([...errs].map(e => e.msg).join(", "));
             }
         }
+
         return { trips: trips.slice(0, limit || undefined) };
     } catch (err) {
         if (err instanceof ReferenceError) {

@@ -3,8 +3,7 @@
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
 import moment from "moment";
-import { adsService } from "../../services/ads";
-import { timeService } from "../../services/time";
+import { AdsService } from "../../services/ads";
 import { getAgencyNames } from "../../shared/getAgencyNames";
 
 interface AdsReq {
@@ -63,9 +62,14 @@ export const adsController = async (
     if (fromDate) fromDate = moment.parseZone(fromDate);
     if (toDate) toDate = moment.parseZone(toDate);
 
-    const { ads, err } = await adsService({ agency, fromDate, toDate, limit });
+    const { ads, err } = await AdsService.service({
+        agency,
+        fromDate,
+        toDate,
+        limit
+    });
     if (err) {
-        return next({ msg: err, status: err.status });
+        return next({ msg: err.msg, status: err.status });
     }
 
     res.json(ads);

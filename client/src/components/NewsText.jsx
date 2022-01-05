@@ -82,7 +82,15 @@ const News = props => {
                         className="w-full whitespace-nowrap spin-words"
                     >
                         {n.date && (
-                            <span className="font-light">
+                            <span className="font-light inline-block">
+                                {n.logoUrl && (
+                                    <img
+                                        src={n.logoUrl}
+                                        alt="Agency logo"
+                                        className="max-h-4 object-contain inline-block mr-1"
+                                        loading="lazy"
+                                    />
+                                )}
                                 {moment.parseZone(n.date).format("DD/MM/YYYY")}{" "}
                                 -{" "}
                             </span>

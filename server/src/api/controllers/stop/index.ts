@@ -2,9 +2,6 @@
 
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
-import moment from "moment";
-import { logger } from "../../../shared/logger";
-import { adsService } from "../../services/ads";
 import { stopService } from "../../services/stop";
 import { getAgencyNames } from "../../shared/getAgencyNames";
 import { getAllStops } from "../../shared/getAllStops";
@@ -50,7 +47,7 @@ export const stopController = async (
 
     const { stop, err } = await stopService({ agency, stopId });
     if (err) {
-        return next({ msg: err, status: err.status });
+        return next({ msg: err.msg, status: err.status });
     }
 
     res.json(stop);

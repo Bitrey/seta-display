@@ -13,6 +13,7 @@ import { tripFn } from "../../interfaces/tripFn";
 import { Base } from "../Base";
 import { News } from "../../interfaces/News";
 import { newsFn } from "../../interfaces/newsFn";
+import { settings } from "../../settings";
 
 interface _SetaRes {
     arrival: {
@@ -46,19 +47,36 @@ interface _SetaRes {
 export class Seta implements Base {
     public static agency: Agency = {
         lang: "it",
-        logoUrl: "https://www.setaweb.it/images/favicon/favicon.ico",
+        logoUrl:
+            "https://www.dropbox.com/s/nk987x28t7u7dqc/logo_seta_bacino.png?raw=1",
         name: "SETA spa",
         timezone: "Europe/Rome",
         phone: "059 416711",
         url: "https://www.setaweb.it/mo/"
     };
 
+    private static _stops: Stop[] | null = null;
+    private static _lastStopReadDate: moment.Moment | null = null;
+
     static get stops(): Stop[] {
-        return JSON.parse(
-            readFileSync(join(cwd(), "./agency_files/seta/stops.json"), {
-                encoding: "utf-8"
-            })
-        );
+        if (
+            !Seta._stops ||
+            !Seta._lastStopReadDate ||
+            moment().diff(Seta._lastStopReadDate, "minutes") >=
+                settings.stopsCacheTimeMin
+        ) {
+            logger.debug("Caching SETA stops");
+            Seta._stops = JSON.parse(
+                readFileSync(join(cwd(), "./agency_files/seta/stops.json"), {
+                    encoding: "utf-8"
+                })
+            ) as Stop[];
+            Seta._lastStopReadDate = moment();
+        } else {
+            logger.debug("SETA stops already cached");
+        }
+
+        return Seta._stops;
     }
 
     private static _instance = axios.create({
@@ -104,6 +122,7 @@ export class Seta implements Base {
         for (let i = 0; i < $(".title").length; i++) {
             news.push({
                 agency: this.agency.name,
+                logoUrl: this.agency.logoUrl,
                 date: moment($(".date-title").eq(i).text(), "DD.MM.YYYY"),
                 type: $(".bacini-title").eq(i).text(),
                 title: $(".title").eq(i).text()
@@ -189,7 +208,8 @@ export class Seta implements Base {
                     ? e.num_passeggeri / e.posti_totali
                     : null;
             const trip: Trip = {
-                agencyName: "SETA",
+                agencyName: this.agency.name,
+                logoUrl: this.agency.logoUrl,
                 tripId: e.codice_corsa,
                 shortName: e.service,
                 longName: e.destination,
