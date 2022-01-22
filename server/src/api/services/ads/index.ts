@@ -13,38 +13,70 @@ interface AdsReq {
     toDate?: moment.Moment;
 }
 
-export const adsService = async ({
-    agency,
-    fromDate,
-    toDate,
-    limit
-}: AdsReq): Promise<{ ads?: Ad[]; err?: CustomErr }> => {
-    let ads: Ad[];
+export class AdsService {
+    private static _cache: Ad[] | null = null;
+    private static _lastRead: moment.Moment | null = null;
 
-    try {
-        const readFilePromise = promisify(readFile);
+    public static async service({
+        agency,
+        fromDate,
+        toDate,
+        limit
+    }: AdsReq): Promise<{ ads?: Ad[]; err?: CustomErr }> {
+        let ads: Ad[];
 
-        ads = (await readFilePromise(settings.adsFilePath, {
-            encoding: "utf-8"
-        })) as any;
-
-        ads.sort((a, b) => b.date.diff(a.date));
-
-        logger.debug("Ads service successful");
-
-        return {
-            ads: ads
-                .filter(
-                    e =>
-                        e.agency === agency &&
-                        (fromDate ? e.date.isSameOrAfter(fromDate) : true) &&
-                        (toDate ? e.date.isSameOrBefore(toDate) : true)
+        try {
+            if (
+                AdsService._cache &&
+                AdsService._lastRead &&
+                !(
+                    moment().diff(AdsService._lastRead, "minutes") >
+                    settings.adsCacheTimeMin
                 )
-                .slice(0, limit || undefined)
-        };
-    } catch (err) {
-        logger.error("Error while loading ads");
-        logger.error(err);
-        return { err: { msg: "Error while loading ads", status: 500 } };
+            ) {
+                logger.debug("Loading ads from cache");
+                ads = AdsService._cache;
+            } else {
+                const readFilePromise = promisify(readFile);
+
+                ads = JSON.parse(
+                    await readFilePromise(settings.adsFilePath, {
+                        encoding: "utf-8"
+                    })
+                ) as any;
+
+                AdsService._cache = ads;
+                AdsService._lastRead = moment();
+
+                logger.debug("Ads successfully read from file, now caching");
+            }
+
+            ads = ads.map(e =>
+                e.date && moment.parseZone(e.date).isValid()
+                    ? { ...e, date: moment.parseZone(e.date) }
+                    : e
+            );
+
+            ads.sort((a, b) => b.date.diff(a.date));
+
+            logger.debug("Ads service successful");
+
+            return {
+                ads: ads
+                    .filter(
+                        e =>
+                            e.agency === agency &&
+                            (fromDate
+                                ? e.date.isSameOrAfter(fromDate)
+                                : true) &&
+                            (toDate ? e.date.isSameOrBefore(toDate) : true)
+                    )
+                    .slice(0, limit || undefined)
+            };
+        } catch (err) {
+            logger.error("Error while loading ads");
+            logger.error(err);
+            return { err: { msg: "Error while loading ads", status: 500 } };
+        }
     }
-};
+}

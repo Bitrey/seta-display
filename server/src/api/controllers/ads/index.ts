@@ -3,8 +3,7 @@
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
 import moment from "moment";
-import { adsService } from "../../services/ads";
-import { timeService } from "../../services/time";
+import { AdsService } from "../../services/ads";
 import { getAgencyNames } from "../../shared/getAgencyNames";
 
 interface AdsReq {
@@ -57,15 +56,26 @@ export const adsController = async (
 
     const { error } = adsSchema.validate({ agency, fromDate, toDate, limit });
     if (error) {
-        return next({ msg: error.message, status: 400 });
+        return next({
+            msg: error.message || "Data validation failed",
+            status: 400
+        });
     }
 
     if (fromDate) fromDate = moment.parseZone(fromDate);
     if (toDate) toDate = moment.parseZone(toDate);
 
-    const { ads, err } = await adsService({ agency, fromDate, toDate, limit });
+    const { ads, err } = await AdsService.service({
+        agency,
+        fromDate,
+        toDate,
+        limit
+    });
     if (err) {
-        return next({ msg: err, status: err.status });
+        return next({
+            msg: err.msg || "Error while loading data",
+            status: err.status || 500
+        });
     }
 
     res.json(ads);

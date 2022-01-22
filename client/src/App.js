@@ -16,7 +16,7 @@ const tripsArgs = {
         "MO6119",
         "MO6132",
         "MO6133",
-        "MO6134"
+        "MO6134",
         // "MO8537",
         // "MO8576"
         // 1,
@@ -27,7 +27,8 @@ const tripsArgs = {
         // 6,
         // 7,
         // 8,
-        // 9
+        // 9,
+        "MODMOMOV" // empty stop
     ],
     limit: 10
 };
@@ -78,9 +79,7 @@ function App() {
                 setTripsReqErr(null);
                 console.log(data);
             } catch (err) {
-                setTripsReqErr(
-                    err?.response?.data?.err?.toString() || err.toString()
-                );
+                setTripsReqErr(err?.response?.data?.err?.toString() || err.toString());
                 console.log(err, err?.response);
             } finally {
                 setTripsLoaded(true);
@@ -102,9 +101,7 @@ function App() {
                 setNewsReqErr(null);
                 console.log(data);
             } catch (err) {
-                setNewsReqErr(
-                    err?.response?.data?.err?.toString() || err.toString()
-                );
+                setNewsReqErr(err?.response?.data?.err?.toString() || err.toString());
                 console.log(err, err?.response);
             } finally {
                 setNewsLoaded(true);

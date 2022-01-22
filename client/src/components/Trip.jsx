@@ -7,10 +7,18 @@ const Trip = ({ i, t }) => {
                 i % 2 === 1 ? "bg-gray-200" : ""
             }`}
         >
-            <p className="w-32 font-semibold text-2xl mr-3">{t.shortName}</p>
-            <p className="w-screen text-lg max-w-xs mr-3 col-span-3">
-                {t.longName}
-            </p>
+            <div className="grid grid-cols-4 items-center w-32 max-w-full font-semibold text-2xl">
+                {t.logoUrl && (
+                    <img
+                        src={t.logoUrl}
+                        alt="Agency logo"
+                        className="object-contain max-h-5"
+                        loading="lazy"
+                    />
+                )}
+                {t.shortName}
+            </div>
+            <p className="w-screen text-lg max-w-xs col-span-3">{t.longName}</p>
             <p className="font-semibold text-lg col-span-2">
                 {t.minTillArrival > 60
                     ? `${Math.floor(t.minTillArrival / 60)}h ${

@@ -2,9 +2,6 @@
 
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
-import moment from "moment";
-import { logger } from "../../../shared/logger";
-import { adsService } from "../../services/ads";
 import { stopService } from "../../services/stop";
 import { getAgencyNames } from "../../shared/getAgencyNames";
 import { getAllStops } from "../../shared/getAllStops";
@@ -40,7 +37,10 @@ export const stopController = async (
 
     const { error } = stopSchema.validate({ agency, stopId });
     if (error) {
-        return next({ msg: error.message, status: 400 });
+        return next({
+            msg: error.message || "Data validation failed",
+            status: 400
+        });
     } else if (getAllStops(agency).findIndex(e => e.stopId === stopId) === -1) {
         return next({
             msg: `Stop ${stopId} of agency ${agency} not found`,
@@ -50,7 +50,10 @@ export const stopController = async (
 
     const { stop, err } = await stopService({ agency, stopId });
     if (err) {
-        return next({ msg: err, status: err.status });
+        return next({
+            msg: err.msg || "Error while loading data",
+            status: err.status || 500
+        });
     }
 
     res.json(stop);

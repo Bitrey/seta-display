@@ -98,13 +98,19 @@ export const tripsController = async (
     const { error } = tripsSchema.validate({ stops, agencies, limit });
     if (error) {
         logger.debug("Stop controller validation failed");
-        return next({ msg: error.message, status: 400 });
+        return next({
+            msg: error.message || "Data validation failed",
+            status: 400
+        });
     }
 
     const { trips, err } = await tripsService({ stops, agencies, limit });
     if (err) {
         logger.debug("Stop service failed");
-        return next({ msg: err.msg, status: err.status });
+        return next({
+            msg: err.msg || "Error while loading data",
+            status: err.status || 500
+        });
     }
 
     res.json(trips);

@@ -13,6 +13,7 @@ import { Base } from "../Base";
 import { Trip } from "../../interfaces/Trip";
 import { newsFn } from "../../interfaces/newsFn";
 import { News } from "../../interfaces/News";
+import { settings } from "../../settings";
 
 // type _TperSingleRes = `TperHellobus: ${string} ${| "Previsto"
 //     | "DaSatellite"} ${number}:${number}`;
@@ -36,19 +37,34 @@ interface AllBusLd {
 export class Tper implements Base {
     public static agency: Agency = {
         lang: "it",
-        logoUrl: "https://solweb.tper.it/resources/images/logo-t.png",
+        logoUrl:
+            "https://www.dropbox.com/s/hjggo1pftqyyf3c/logo_TPER_0.png?raw=1",
         name: "TPER spa",
         timezone: "Europe/Rome",
         phone: "051 290290",
         url: "https://www.tper.it/"
     };
 
+    private static _stops: Stop[] | null = null;
+    private static _lastStopReadDate: moment.Moment | null = null;
+
     static get stops(): Stop[] {
-        return JSON.parse(
-            readFileSync(join(cwd(), "./agency_files/tper/stops.json"), {
-                encoding: "utf-8"
-            })
-        );
+        if (
+            !Tper._stops ||
+            !Tper._lastStopReadDate ||
+            moment().diff(Tper._lastStopReadDate, "minutes") >=
+                settings.stopsCacheTimeMin
+        ) {
+            logger.debug("Caching TPER stops");
+            Tper._stops = JSON.parse(
+                readFileSync(join(cwd(), "./agency_files/tper/stops.json"), {
+                    encoding: "utf-8"
+                })
+            ) as Stop[];
+            Tper._lastStopReadDate = moment();
+        }
+
+        return Tper._stops;
     }
 
     private static _instance = axios.create({
@@ -72,7 +88,8 @@ export class Tper implements Base {
                     ? "438"
                     : type === "contrassegniSosta"
                     ? "437"
-                    : console.error("NewsType non valido in getNews TPER", "33")
+                    : (logger.error("NewsType non valido in getNews TPER"),
+                      "33")
             }/all/rss.xml`;
     }
 
@@ -81,18 +98,31 @@ export class Tper implements Base {
             return { err: { msg: "Invalid TPER news type", status: 400 } };
         }
 
-        const parser = new Parser();
-        const feed = await parser.parseURL(Tper._getNewsUrl(type));
         const news: News[] = [];
+        try {
+            // const execES6 = promisify(exec);
+            const data = (await this._instance.get(Tper._getNewsUrl(type)))
+                .data;
+            // platform === "linux"
+            // ? (await execES6("curl -s -k " + Tper._getNewsUrl(type)))
+            //   .stdout :
 
-        feed.items.forEach((item: any) => {
-            if (!item.title) return;
-            news.push({
-                agency: this.agency.name,
-                date: moment.parseZone(item.isoDate),
-                title: item.title
+            const parser = new Parser();
+            const feed = await parser.parseString(data);
+
+            feed.items.forEach((item: any) => {
+                if (!item.title) return;
+                news.push({
+                    agency: this.agency.name,
+                    logoUrl: this.agency.logoUrl,
+                    date: moment.parseZone(item.isoDate),
+                    title: item.title
+                });
             });
-        });
+        } catch (err) {
+            logger.error("Error while fetching TPER news");
+            logger.error(err);
+        }
 
         return news;
     };
@@ -157,7 +187,8 @@ export class Tper implements Base {
                 try {
                     const xmlData: any = await parseStringPromise(rawData);
                     let str: string = xmlData.string._;
-                    if (str.startsWith("TperHellobus: ")) str = str.substr(14);
+                    if (str.startsWith("TperHellobus: "))
+                        str = str.substring(14);
                     else if (str.includes("ERR_TOO_MANY_REQUESTS_LOCK"))
                         throw new Error("TperHellobus requests limit reached");
                     else if (str.includes("SERVICE FAILURE"))
@@ -184,7 +215,7 @@ export class Tper implements Base {
                             );
                             let busNum: string | undefined = undefined;
                             if (busNumIndex !== -1) {
-                                const s1 = e.substr(busNumIndex);
+                                const s1 = e.substring(busNumIndex);
                                 const sIndex = s1.search(/[0-9]+/g);
                                 if (sIndex === -1) {
                                     logger.error(
@@ -192,11 +223,12 @@ export class Tper implements Base {
                                     );
                                     return;
                                 }
-                                busNum = s1.substr(sIndex)?.split(" ")[0];
+                                busNum = s1.substring(sIndex)?.split(" ")[0];
                             }
                             const time = _t.unix();
                             const t: Trip = {
-                                agencyName: "TPER",
+                                agencyName: this.agency.name,
+                                logoUrl: this.agency.logoUrl,
                                 shortName: s[0],
                                 longName: "",
                                 realtimeArrival: time,
@@ -219,6 +251,7 @@ export class Tper implements Base {
                         })
                         .filter(e => !!e);
                 } catch (err) {
+                    logger.error("Error while fetching TPER routes");
                     logger.error(err);
                     return {
                         err: { msg: "Error while loading data", status: 500 }
