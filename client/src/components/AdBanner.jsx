@@ -1,12 +1,28 @@
-import React, { useEffect, useState } from "react";
-import ReactPlayer from "react-player/vimeo";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import ReactPlayer from "react-player/lazy";
 import axios from "axios";
 import { scheduleJob } from "node-schedule";
 import moment from "moment";
 
+function useWindowSize() {
+    const [size, setSize] = useState([0, 0]);
+    useLayoutEffect(() => {
+        function updateSize() {
+            setSize([window.innerWidth, window.innerHeight]);
+        }
+        window.addEventListener("resize", updateSize);
+        updateSize();
+        return () => window.removeEventListener("resize", updateSize);
+    }, []);
+    return size;
+}
+
 const AdBanner = ({ img, name, description, className }) => {
     const [ads, setAds] = useState([]);
-    const [currentAdIndex, setCurrentAdIndex] = useState(0);
+    const [width, setWidth] = useState("auto");
+    const [height, setHeight] = useState("auto");
+    const [wWidth, wHeight] = useWindowSize();
+    const [currentAdIndex, setCurrentAdIndex] = useState(3);
 
     // const [loading, setLoading] = useState(false);
 
@@ -18,6 +34,7 @@ const AdBanner = ({ img, name, description, className }) => {
     }
 
     useEffect(() => {
+        console.log("Ads job scheduled");
         const _loadAdsJob = scheduleJob("0 * * * * *", loadAds);
         if (
             moment(_loadAdsJob.nextInvocation()._date.ts).diff(moment(), "s") >
@@ -27,51 +44,41 @@ const AdBanner = ({ img, name, description, className }) => {
         }
     }, []);
 
+    const ref = useRef(null);
+
+    useEffect(() => {
+        console.log("h changed");
+        setWidth(ref.current.clientWidth);
+        setHeight(ref.current.clientHeight);
+    }, [wWidth, wHeight]);
+
     return (
         <div
-            className={`flex flex-col h-full bg-gray-100 items-center w-full p-6 justify-center ${
+            ref={ref}
+            className={`flex flex-col h-full m-0 p-0 bg-gray-100 items-center w-full justify-center text-black ${
                 className || ""
             }`}
         >
-            {Number.isInteger(currentAdIndex) && (
-                <>
-                    <div className="flex justify-center mr-6 max-w-full">
-                        <img
-                            src="/img/moovit2.png"
-                            alt="Moovit"
-                            className="w-full max-w-xs object-contain mr-3"
-                            loading="lazy"
-                        />
-                        <img
-                            src="/img/download-app.png"
-                            alt="Download app"
-                            className="max-h-24 object-contain ml-3"
-                            loading="lazy"
-                        />
-                    </div>
-                    <div className="flex flex-col mb-2 ml-6 lg:mb-0 lg:ml-0 lg:mt-4">
-                        <ReactPlayer
-                            loop
-                            playing
-                            controls={false}
-                            muted
-                            url={ads[currentAdIndex]}
-                            autopause={false}
-                            autoplay
-                            keyboard={false}
-                            title={false}
-                        />
-
-                        <p className="text-gray-700 text-3xl">
-                            Pianifica il tuo viaggiox
-                        </p>
-                        <p className="text-black mt-2 max-w-sm">
-                            Lorem ipsum dolor, sit amet consectetur adipisicing
-                            elit. A deleniti eius, odit molestias, quo totam
-                            unde expedita.
-                        </p>
-                    </div>
-                </>
+            {ads?.length && Number.isInteger(currentAdIndex) && (
+                <div className="h-full w-full overflow-hidden">
+                    <ReactPlayer
+                        width={"100%"}
+                        height={"100%"}
+                        loop={false} // DEBUG
+                        // loop
+                        url={ads[currentAdIndex].url}
+                        playing
+                        muted
+                        style={{ maxWidth: width, maxHeight: height }}
+                        onEnded={() =>
+                            setCurrentAdIndex(
+                                currentAdIndex >= ads.length - 1
+                                    ? 0
+                                    : currentAdIndex + 1
+                            )
+                        }
+                    />
+                </div>
             )}
         </div>
     );

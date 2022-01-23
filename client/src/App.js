@@ -77,9 +77,11 @@ function App() {
                 const { data } = await axios.post("/api/trips", tripsArgs);
                 setTrips(data);
                 setTripsReqErr(null);
-                console.log(data);
+                console.log("trips", data);
             } catch (err) {
-                setTripsReqErr(err?.response?.data?.err?.toString() || err.toString());
+                setTripsReqErr(
+                    err?.response?.data?.err?.toString() || err.toString()
+                );
                 console.log(err, err?.response);
             } finally {
                 setTripsLoaded(true);
@@ -99,9 +101,11 @@ function App() {
                 const { data } = await axios.post("/api/news", newsArgs);
                 setNews(data);
                 setNewsReqErr(null);
-                console.log(data);
+                console.log("news", data);
             } catch (err) {
-                setNewsReqErr(err?.response?.data?.err?.toString() || err.toString());
+                setNewsReqErr(
+                    err?.response?.data?.err?.toString() || err.toString()
+                );
                 console.log(err, err?.response);
             } finally {
                 setNewsLoaded(true);

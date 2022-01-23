@@ -68,7 +68,7 @@ const Timetable = props => {
                     newsLoaded={newsLoaded}
                     newsReqErr={newsReqErr}
                 />
-                <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full">
+                <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full m-0 p-0">
                     <AdBanner className="order-2 lg:order-1 border-r" />
 
                     <div className="border-l order-1 lg:order-2 bg-gray-100 auto-rows-min overflow-hidden h-full grid grid-cols-3">
@@ -99,12 +99,12 @@ const Timetable = props => {
                                 trips.map((t, i) => (
                                     <Trip key={i} t={t} i={i} />
                                 ))
+                            ) : tripsLoaded ? (
+                                <p className="p-4">
+                                    Nessuna corsa in programma
+                                </p>
                             ) : (
-                                tripsLoaded && (
-                                    <p className="p-4">
-                                        Nessuna corsa in programma
-                                    </p>
-                                )
+                                <p className="p-4">Caricamento...</p>
                             )}
                         </div>
                     </div>
