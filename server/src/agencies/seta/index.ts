@@ -254,6 +254,11 @@ export class Seta implements Base {
         }
         res.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
 
+        // Delete undefined fields
+        Object.keys(res).forEach((key: any) =>
+            res[key] === undefined ? delete res[key] : {}
+        );
+
         return maxResults ? res.slice(0, maxResults) : res;
     };
 }

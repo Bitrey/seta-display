@@ -18,7 +18,9 @@ const Trip = ({ i, t }) => {
                 )}
                 {t.shortName}
             </div>
-            <p className="w-screen text-lg max-w-xs col-span-3">{t.longName}</p>
+            <p className="w-screen text-lg col-span-3 max-w-[fit-content] overflow-ellipsis">
+                {t.longName}
+            </p>
             <p className="font-semibold text-lg col-span-2">
                 {t.minTillArrival > 60
                     ? `${Math.floor(t.minTillArrival / 60)}h ${

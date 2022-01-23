@@ -8,8 +8,8 @@ class Topbar extends Component {
         const { stopId, stopName, news, newsLoaded, newsReqErr } = this.props;
         return (
             <>
-                <div className="w-full flex flex-row items-center justify-between bg-gray-900 py-3 px-6">
-                    <div className="flex items-end">
+                <div className="w-full flex flex-row items-center justify-between bg-gray-900 py-3 px-6 max-h-36 lg:max-h-48">
+                    <div className="flex items-end max-h-full">
                         <p className="text-3xl font-semibold">{stopName}</p>
                         <div className="flex ml-3">
                             {/* <p className="font-light mr-2">Codice fermata</p> */}
