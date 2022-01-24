@@ -36,7 +36,10 @@ const AdBanner = ({ img, name, description, className }) => {
     useEffect(() => {
         console.log("Ads job scheduled");
         const _loadAdsJob = scheduleJob("0 * * * * *", loadAds);
-        if (moment(_loadAdsJob.nextInvocation()._date.ts).diff(moment(), "s") > 5) {
+        if (
+            moment(_loadAdsJob.nextInvocation()._date.ts).diff(moment(), "s") >
+            5
+        ) {
             loadAds();
         }
     }, []);
@@ -50,7 +53,9 @@ const AdBanner = ({ img, name, description, className }) => {
     }, [wWidth, wHeight]);
 
     function incrementIndex() {
-        setCurrentAdIndex(currentAdIndex >= ads.length - 1 ? 0 : currentAdIndex + 1);
+        setCurrentAdIndex(
+            currentAdIndex >= ads.length - 1 ? 0 : currentAdIndex + 1
+        );
     }
 
     return (
@@ -84,7 +89,9 @@ const AdBanner = ({ img, name, description, className }) => {
                             loading="lazy"
                         />
                     ) : (
-                        <div>dio porco</div>
+                        <div className="w-full h-full flex items-center justify-center text-lg font-light">
+                            Nessuna pubblicità
+                        </div>
                     )}
                 </div>
             )}
