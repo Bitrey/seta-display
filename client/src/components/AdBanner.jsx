@@ -22,7 +22,7 @@ const AdBanner = ({ img, name, description, className }) => {
     const [width, setWidth] = useState("auto");
     const [height, setHeight] = useState("auto");
     const [wWidth, wHeight] = useWindowSize();
-    const [currentAdIndex, setCurrentAdIndex] = useState(3);
+    const [currentAdIndex, setCurrentAdIndex] = useState(2);
 
     // const [loading, setLoading] = useState(false);
 
@@ -36,10 +36,7 @@ const AdBanner = ({ img, name, description, className }) => {
     useEffect(() => {
         console.log("Ads job scheduled");
         const _loadAdsJob = scheduleJob("0 * * * * *", loadAds);
-        if (
-            moment(_loadAdsJob.nextInvocation()._date.ts).diff(moment(), "s") >
-            5
-        ) {
+        if (moment(_loadAdsJob.nextInvocation()._date.ts).diff(moment(), "s") > 5) {
             loadAds();
         }
     }, []);
@@ -52,6 +49,10 @@ const AdBanner = ({ img, name, description, className }) => {
         setHeight(ref.current.clientHeight);
     }, [wWidth, wHeight]);
 
+    function incrementIndex() {
+        setCurrentAdIndex(currentAdIndex >= ads.length - 1 ? 0 : currentAdIndex + 1);
+    }
+
     return (
         <div
             ref={ref}
@@ -61,23 +62,30 @@ const AdBanner = ({ img, name, description, className }) => {
         >
             {ads?.length && Number.isInteger(currentAdIndex) && (
                 <div className="h-full w-full overflow-hidden">
-                    <ReactPlayer
-                        width={"100%"}
-                        height={"100%"}
-                        loop={false} // DEBUG
-                        // loop
-                        url={ads[currentAdIndex].url}
-                        playing
-                        muted
-                        style={{ maxWidth: width, maxHeight: height }}
-                        onEnded={() =>
-                            setCurrentAdIndex(
-                                currentAdIndex >= ads.length - 1
-                                    ? 0
-                                    : currentAdIndex + 1
-                            )
-                        }
-                    />
+                    {ads[currentAdIndex].type === "video" ? (
+                        <ReactPlayer
+                            width={"100%"}
+                            height={"100%"}
+                            loop={false} // DEBUG
+                            // loop
+                            url={ads[currentAdIndex].url}
+                            playing
+                            muted
+                            style={{ maxWidth: width, maxHeight: height }}
+                            onEnded={incrementIndex}
+                        />
+                    ) : ads[currentAdIndex].type === "image" ? (
+                        <img
+                            src={ads[currentAdIndex].url}
+                            alt="Ad"
+                            className="w-full h-full object-contain"
+                            style={{ maxWidth: width, maxHeight: height }}
+                            onLoad={() => setTimeout(incrementIndex, 10000)}
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div>dio porco</div>
+                    )}
                 </div>
             )}
         </div>

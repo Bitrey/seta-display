@@ -79,9 +79,7 @@ function App() {
                 setTripsReqErr(null);
                 console.log("trips", data);
             } catch (err) {
-                setTripsReqErr(
-                    err?.response?.data?.err?.toString() || err.toString()
-                );
+                setTripsReqErr(err?.response?.data?.err?.toString() || err.toString());
                 console.log(err, err?.response);
             } finally {
                 setTripsLoaded(true);
@@ -103,9 +101,7 @@ function App() {
                 setNewsReqErr(null);
                 console.log("news", data);
             } catch (err) {
-                setNewsReqErr(
-                    err?.response?.data?.err?.toString() || err.toString()
-                );
+                setNewsReqErr(err?.response?.data?.err?.toString() || err.toString());
                 console.log(err, err?.response);
             } finally {
                 setNewsLoaded(true);
