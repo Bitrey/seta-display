@@ -21,7 +21,7 @@ services:
             context: client
             dockerfile: Dockerfile.prod
         ports:
-            - "80:80"
+            - "1709:80"
         networks:
             - backend
             - frontend
