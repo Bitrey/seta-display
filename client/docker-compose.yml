@@ -6,12 +6,13 @@ services:
             dockerfile: Dockerfile.prod
         ports:
             - "4000:80"
-        networks:
-            - tpl_network
+        # use this if on same network
+        # networks:
+        #     - tpl_network
         environment:
             - IP=0.0.0.0
             - HOST=3000
-networks:
-    tpl_network: # {}
-        # use this if on same network
-        driver: bridge
+# use this if on same network
+# networks:
+#     tpl_network: # {}
+#         driver: bridge
