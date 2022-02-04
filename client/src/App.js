@@ -9,14 +9,14 @@ const tripsArgs = {
     stopName: "San Cesario",
     stopId: [
         "MO2076",
-        "MO3600",
-        "68041",
-        "68042",
+        "MO3600"
+        // "68041",
+        // "68042",
         // "MO506",
-        "MO6119",
-        "MO6132",
-        "MO6133",
-        "MO6134",
+        // "MO6119",
+        // "MO6132",
+        // "MO6133",
+        // "MO6134",
         // "MO8537",
         // "MO8576"
         // 1,
@@ -28,7 +28,7 @@ const tripsArgs = {
         // 7,
         // 8,
         // 9,
-        "MODMOMOV" // empty stop
+        // "MODMOMOV" // empty stop for testing
     ],
     limit: 10
 };
