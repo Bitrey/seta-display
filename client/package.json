@@ -45,6 +45,7 @@
     },
     "devDependencies": {
         "autoprefixer": "^9",
+        "babel-plugin-transform-remove-console": "^6.9.4",
         "postcss": "^7",
         "tailwindcss": "npm:@tailwindcss/postcss7-compat"
     },

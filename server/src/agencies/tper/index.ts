@@ -303,10 +303,12 @@ export class Tper implements Base {
 
             trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
 
-            // Delete undefined fields
-            Object.keys(trips).forEach((key: any) =>
-                trips && trips[key] === undefined ? delete trips[key] : {}
-            );
+            for (let i = 0; i < trips.length; i++) {
+                for (const key in trips[i]) {
+                    const _k = key as keyof typeof trips[typeof i];
+                    if (trips[i][_k] === undefined) delete trips[i][_k];
+                }
+            }
 
             return trips;
         } catch (err) {

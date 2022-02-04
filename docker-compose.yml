@@ -6,7 +6,9 @@ services:
         networks:
             - backend
     backend:
-        build: server
+        build:
+            context: ./server
+            dockerfile: Dockerfile
         ports:
             - "5000:5000"
         networks:
@@ -20,7 +22,9 @@ services:
             - REDIS_URL=redis://cache
             - NODE_ENV=development
     frontend:
-        build: client
+        build:
+            context: ./client
+            dockerfile: Dockerfile
         ports:
             - "3000:3000"
         networks:
