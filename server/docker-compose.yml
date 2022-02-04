@@ -8,12 +8,20 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.prod
+        # choose whether to make the service public
         ports:
             - "2195:2195"
+        # expose:
+        #     - "2195"
         networks:
             - backend
+            - client_tpl_network
         environment:
             - REDIS_URL=redis://redis
-
+            - IP=0.0.0.0
+            - PORT=2195
 networks:
     backend: {}
+    # use this if on same network
+    client_tpl_network:
+        external: true

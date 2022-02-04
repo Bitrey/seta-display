@@ -7,10 +7,11 @@ services:
         ports:
             - "4000:80"
         networks:
-            - frontend
+            - tpl_network
         environment:
             - IP=0.0.0.0
             - HOST=3000
-
 networks:
-    frontend: {}
+    tpl_network: # {}
+        # use this if on same network
+        driver: bridge
