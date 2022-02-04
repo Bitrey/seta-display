@@ -100,7 +100,7 @@ router.post("/ads", adsController);
 /**
  * @openapi
  * /api/stop:
- *  get:
+ *  post:
  *    description: Fetch realtime information for a stop
  *    tags:
  *      - api

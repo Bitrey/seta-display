@@ -8,9 +8,9 @@ services:
             - "4000:80"
         networks:
             - frontend
-        # environment:
-        #     - IP=0.0.0.0
-        #     - HOST=3000
+        environment:
+            - IP=0.0.0.0
+            - HOST=3000
 
 networks:
     frontend: {}

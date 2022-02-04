@@ -91,7 +91,7 @@ export const tripsController = async (
     } catch (err) {}
 
     const stops = (Array.isArray(stopId) ? stopId : [stopId]).map(e =>
-        e.toString()
+        e?.toString()
     );
     const agencies = Array.isArray(agency) ? agency : [agency];
 
