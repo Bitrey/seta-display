@@ -58,7 +58,8 @@ const Timetable = props => {
     const newsReqErr = props.newsReqErr;
 
     return (
-        <div className="w-full flex rounded-2xl h-full overflow-hidden bg-white">
+        // <div className="w-full flex rounded-2xl h-full overflow-hidden bg-white">
+        <div className="w-full flex h-full overflow-hidden bg-white">
             <div className="w-full flex flex-col text-white">
                 <Topbar
                     agency={Array.isArray(agency) ? agency[0] : agency}
@@ -78,9 +79,8 @@ const Timetable = props => {
                                 <p className="mr-3 text-lg col-span-3">
                                     Destinazione
                                 </p>
-                                <p className="text-lg col-span-2">
-                                    Tempo all'arrivo
-                                </p>
+                                <p className="text-lg">Arrivo</p>
+                                <p className="text-lg">Ritardo</p>
                             </div>
                         ) : (
                             !tripsReqErr && (

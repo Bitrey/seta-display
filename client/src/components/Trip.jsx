@@ -1,4 +1,5 @@
 import React from "react";
+import moment from "moment-timezone";
 
 const Trip = ({ i, t }) => {
     return (
@@ -21,13 +22,18 @@ const Trip = ({ i, t }) => {
             <p className="w-screen text-lg col-span-3 max-w-[fit-content] overflow-ellipsis">
                 {t.longName}
             </p>
-            <p className="font-semibold text-lg col-span-2">
-                {t.minTillArrival > 60
-                    ? `${Math.floor(t.minTillArrival / 60)}h ${
-                          t.minTillArrival % 60
-                      }m`
-                    : t.minTillArrival + "m"}
+            <p className="font-semibold text-lg">
+                {moment
+                    .unix(t.realtimeDeparture || t.scheduledDeparture)
+                    .diff(moment(), "m") + "m"}
                 {t.scheduleRelationship !== "SCHEDULED" && "*"}
+            </p>
+            <p className="text-lg">
+                {t.scheduleRelationship === "SCHEDULED"
+                    ? moment
+                          .unix(t.scheduledDeparture)
+                          .diff(moment.unix(t.scheduledDeparture), "m") + "m"
+                    : "-"}
             </p>
         </div>
     );

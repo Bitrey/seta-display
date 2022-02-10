@@ -22,7 +22,7 @@ const AdBanner = ({ img, name, description, className }) => {
     const [width, setWidth] = useState("auto");
     const [height, setHeight] = useState("auto");
     const [wWidth, wHeight] = useWindowSize();
-    const [currentAdIndex, setCurrentAdIndex] = useState(2);
+    const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
     // const [loading, setLoading] = useState(false);
 

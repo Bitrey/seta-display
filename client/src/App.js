@@ -4,10 +4,14 @@ import { scheduleJob } from "node-schedule";
 import "./App.css";
 import Timetable from "./components/Timetable3.jsx";
 
+const params = new Proxy(new URLSearchParams(window.location.search), {
+    get: (searchParams, prop) => searchParams.get(prop)
+});
+
 const tripsArgs = {
-    agency: ["seta", "tper"],
-    stopName: "San Cesario",
-    stopId: [
+    agency: params.agency || ["seta", "tper"],
+    stopName: params.stopName || "San Cesario",
+    stopId: params.stopId || [
         "MO2076",
         "MO3600"
         // "68041",
@@ -30,7 +34,7 @@ const tripsArgs = {
         // 9,
         // "MODMOMOV" // empty stop for testing
     ],
-    limit: 10
+    limit: params.limit || 8
 };
 
 const newsArgs = {
@@ -126,30 +130,20 @@ function App() {
 
     return (
         <div className="App">
-            {/* <div className="flex flex-col justify-center items-start w-full min-h-screen bg-black text-yellow-200"> */}
-            {/* <Topbar agency="seta" /> */}
-            {/* <Timetable
-                    agency={'["seta"]'}
-                    stopId={'["MO2076", "MO6102"]'}
-                /> */}
-            <div className="py-6 flex w-full h-full min-h-screen justify-center bg-gray-200">
-                <div className="w-5/6">
-                    <Timetable
-                        agency={tripsArgs.agency}
-                        stopName={tripsArgs.stopName}
-                        trips={trips}
-                        tripsLoaded={tripsLoaded}
-                        tripsReqErr={tripsReqErr}
-                        stopId={tripsArgs.stopId}
-                        limit={tripsArgs.limit}
-                        news={news}
-                        newsLoaded={newsLoaded}
-                        newsReqErr={newsReqErr}
-                    />
-                </div>
+            <div className="w-screen h-screen">
+                <Timetable
+                    agency={tripsArgs.agency}
+                    stopName={tripsArgs.stopName}
+                    trips={trips}
+                    tripsLoaded={tripsLoaded}
+                    tripsReqErr={tripsReqErr}
+                    stopId={tripsArgs.stopId}
+                    limit={tripsArgs.limit}
+                    news={news}
+                    newsLoaded={newsLoaded}
+                    newsReqErr={newsReqErr}
+                />
             </div>
-            {/* <Timetable2 agency="tper" stopId="659004" /> */}
-            {/* </div> */}
         </div>
     );
 }
