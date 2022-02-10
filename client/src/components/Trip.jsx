@@ -2,6 +2,12 @@ import React from "react";
 import moment from "moment-timezone";
 
 const Trip = ({ i, t }) => {
+    const delay =
+        t.scheduleRelationship === "SCHEDULED" &&
+        moment
+            .unix(t.realtimeDeparture)
+            .diff(moment.unix(t.scheduledDeparture), "minutes");
+
     return (
         <div
             className={`w-full grid grid-cols-6 items-center px-6 py-2 ${
@@ -29,11 +35,7 @@ const Trip = ({ i, t }) => {
                 {t.scheduleRelationship !== "SCHEDULED" && "*"}
             </p>
             <p className="text-lg">
-                {t.scheduleRelationship === "SCHEDULED"
-                    ? moment
-                          .unix(t.scheduledDeparture)
-                          .diff(moment.unix(t.scheduledDeparture), "m") + "m"
-                    : "-"}
+                {delay ? (delay > 0 ? "+" + delay : delay) + "m" : "-"}
             </p>
         </div>
     );

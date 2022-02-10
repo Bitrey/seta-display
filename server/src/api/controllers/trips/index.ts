@@ -90,10 +90,12 @@ export const tripsController = async (
         stopId = JSON.parse(stopId as string);
     } catch (err) {}
 
-    const stops = (Array.isArray(stopId) ? stopId : [stopId]).map(e =>
-        e?.toString()
-    );
-    const agencies = Array.isArray(agency) ? agency : [agency];
+    const stops = [
+        ...new Set(
+            (Array.isArray(stopId) ? stopId : [stopId]).map(e => e?.toString())
+        )
+    ];
+    const agencies = [...new Set(Array.isArray(agency) ? agency : [agency])];
 
     const { error } = tripsSchema.validate({ stops, agencies, limit });
     if (error) {

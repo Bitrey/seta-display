@@ -2,8 +2,9 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import axios from "axios";
 import { scheduleJob } from "node-schedule";
 import "./App.css";
-import Timetable from "./components/Timetable3.jsx";
+import Timetable from "./components/Timetable.jsx";
 import Cookies from "js-cookie";
+import moment from "moment";
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
     get: (searchParams, prop) => searchParams.get(prop)
@@ -80,6 +81,7 @@ function App() {
     /** @type {[Trip[] | null, React.Dispatch<Trip[]>]} */
     const [trips, setTrips] = useState(null);
     const [news, setNews] = useState(null);
+    const [ads, setAds] = useState(null);
     const [tripsReqErr, setTripsReqErr] = useState(null);
     const [newsReqErr, setNewsReqErr] = useState(null);
     const [tripsJobName, setTripsJobName] = useState(null);
@@ -97,7 +99,7 @@ function App() {
         // refresh page every day
         console.log("reloading page in", 1000 * 60 * 60 * 24 + "ms");
         setTimeout(window.location.reload, 1000 * 60 * 60 * 24);
-    });
+    }, []);
 
     useEffect(() => {
         async function getTrips() {
@@ -147,11 +149,30 @@ function App() {
         }
     }, [newsJobName]);
 
+    async function loadAds() {
+        console.log("loading ads");
+        const { data } = await axios.post("/api/ads", { agency: "seta" });
+        console.log("ads", data);
+        setAds(data);
+    }
+
+    useEffect(() => {
+        console.log("Ads job scheduled");
+        const _loadAdsJob = scheduleJob("0 * * * * *", loadAds);
+        if (
+            moment(_loadAdsJob.nextInvocation()._date.ts).diff(moment(), "s") >
+            5
+        ) {
+            loadAds();
+        }
+    }, []);
+
     return (
         <div className="App">
             <div className="w-screen h-screen">
                 <Timetable
                     agency={tripsArgs.agency}
+                    ads={ads}
                     stopName={tripsArgs.stopName}
                     trips={trips}
                     tripsLoaded={tripsLoaded}

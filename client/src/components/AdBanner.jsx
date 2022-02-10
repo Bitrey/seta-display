@@ -17,32 +17,13 @@ function useWindowSize() {
     return size;
 }
 
-const AdBanner = ({ img, name, description, className }) => {
-    const [ads, setAds] = useState([]);
+const AdBanner = ({ ads, className }) => {
     const [width, setWidth] = useState("auto");
     const [height, setHeight] = useState("auto");
     const [wWidth, wHeight] = useWindowSize();
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
     // const [loading, setLoading] = useState(false);
-
-    async function loadAds() {
-        console.log("loading ads");
-        const { data } = await axios.post("/api/ads", { agency: "seta" });
-        console.log("ads", data);
-        setAds(data);
-    }
-
-    useEffect(() => {
-        console.log("Ads job scheduled");
-        const _loadAdsJob = scheduleJob("0 * * * * *", loadAds);
-        if (
-            moment(_loadAdsJob.nextInvocation()._date.ts).diff(moment(), "s") >
-            5
-        ) {
-            loadAds();
-        }
-    }, []);
 
     const ref = useRef(null);
 
@@ -65,9 +46,11 @@ const AdBanner = ({ img, name, description, className }) => {
                 className || ""
             }`}
         >
-            {ads?.length && Number.isInteger(currentAdIndex) && (
-                <div className="h-full w-full overflow-hidden">
-                    {ads[currentAdIndex].type === "video" ? (
+            <div className="h-full w-full overflow-hidden">
+                {!!ads?.length &&
+                Number.isInteger(currentAdIndex) &&
+                ads[currentAdIndex] ? (
+                    ads[currentAdIndex].type === "video" ? (
                         <ReactPlayer
                             width={"100%"}
                             height={"100%"}
@@ -90,11 +73,15 @@ const AdBanner = ({ img, name, description, className }) => {
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-lg font-light">
-                            Nessuna pubblicità
+                            Errore nel caricamento della pubblicità
                         </div>
-                    )}
-                </div>
-            )}
+                    )
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-lg font-light">
+                        Nessuna pubblicità
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
