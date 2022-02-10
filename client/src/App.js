@@ -3,15 +3,34 @@ import axios from "axios";
 import { scheduleJob } from "node-schedule";
 import "./App.css";
 import Timetable from "./components/Timetable3.jsx";
+import Cookies from "js-cookie";
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
     get: (searchParams, prop) => searchParams.get(prop)
 });
 
+function getArg(argName, defaultValue) {
+    if (params[argName]) {
+        Cookies.set(
+            argName,
+            typeof params[argName] === "object"
+                ? JSON.stringify(params[argName])
+                : params[argName],
+            { expires: 365 * 30 }
+        );
+    }
+    let c = null;
+    try {
+        c = JSON.parse(Cookies.get(argName));
+    } catch (err) {}
+
+    return params[argName] || c || Cookies.get(argName) || defaultValue;
+}
+
 const tripsArgs = {
-    agency: params.agency || ["seta", "tper"],
-    stopName: params.stopName || "San Cesario",
-    stopId: params.stopId || [
+    agency: getArg("agency", ["seta", "tper"]),
+    stopName: getArg("stopName", "San Cesario"),
+    stopId: getArg("stopId", [
         "MO2076",
         "MO3600"
         // "68041",
@@ -33,8 +52,8 @@ const tripsArgs = {
         // 8,
         // 9,
         // "MODMOMOV" // empty stop for testing
-    ],
-    limit: params.limit || 8
+    ]),
+    limit: getArg("limit", 10)
 };
 
 const newsArgs = {
