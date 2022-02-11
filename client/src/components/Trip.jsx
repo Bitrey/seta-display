@@ -25,7 +25,7 @@ const Trip = ({ i, t }) => {
                 )}
                 {t.shortName}
             </div>
-            <p className="w-screen text-lg col-span-3 max-w-[fit-content] overflow-ellipsis">
+            <p className="w-full whitespace-nowrap overflow-hidden text-lg col-span-3 max-w-[fit-content] overflow-ellipsis">
                 {t.longName}
             </p>
             <p className="font-semibold text-lg">

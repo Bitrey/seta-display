@@ -28,8 +28,8 @@ const Topbar = ({ stopId, stopName, news, newsLoaded, newsReqErr }) => {
                 </p>
             </div>
             <div
-                className="w-full flex flex-col bg-gray-700 pt-4 pb-4 px-6 overflow-hidden box-content"
-                style={{ minHeight: "1.5rem" }}
+                className="w-full flex flex-col bg-gray-700 py-4 px-6 overflow-hidden box-border"
+                style={{ minHeight: "3.5rem" }}
             >
                 <NewsText
                     news={news}

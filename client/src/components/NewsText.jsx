@@ -79,7 +79,7 @@ const News = props => {
                 [...news, news[0]].map((n, i) => (
                     <div
                         key={i}
-                        className="w-full whitespace-nowrap spin-words"
+                        className="w-full whitespace-nowrap spin-words overflow-hidden overflow-ellipsis"
                     >
                         {n.date && (
                             <span className="font-light inline-block">
@@ -96,7 +96,9 @@ const News = props => {
                             </span>
                         )}
                         {n.type && <span>{n.type} - </span>}
-                        <span className="font-light">{n.title}</span>
+                        <span className="font-light overflow-hidden">
+                            {n.title}
+                        </span>
                     </div>
                 ))
             ) : (
