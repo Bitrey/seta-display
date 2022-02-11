@@ -23,7 +23,7 @@ export class Redis {
                 logger.info("Connecting to Redis...");
                 await newClient.connect();
                 logger.info("Connected to Redis");
-                this._client = newClient;
+                this._client = newClient as any;
                 // await Redis._waitForConnection(newClient);
             }
             return Redis._client as redis.RedisClientType<any>;

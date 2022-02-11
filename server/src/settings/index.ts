@@ -7,5 +7,5 @@ export const settings = {
     stopsCacheTimeMin: 60,
     adsCacheTimeMin: 30,
     newsCacheTimeMin: 3,
-    redisCacheSec: 45
+    redisCacheSec: 10 // DEBUG
 };

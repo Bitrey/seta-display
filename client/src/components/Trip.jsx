@@ -11,7 +11,12 @@ const Trip = ({ i, t }) => {
             ? moment
                   .unix(t.realtimeDeparture)
                   .diff(moment.unix(t.scheduledDeparture), "minutes")
-            : null;
+            : (console.log(
+                  "dio boia",
+                  t.scheduledDeparture.toString(),
+                  t.scheduleRelationship
+              ),
+              null);
 
     return (
         <div

@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from "axios";
-import { readFileSync } from "fs";
+import { readFile, readFileSync, writeFile } from "fs";
 import { join } from "path";
 import { parseStringPromise } from "xml2js";
 import { cwd } from "process";
@@ -14,6 +14,8 @@ import { Trip } from "../../interfaces/Trip";
 import { newsFn } from "../../interfaces/newsFn";
 import { News } from "../../interfaces/News";
 import { settings } from "../../settings";
+import { promisify } from "util";
+import { stringifyArray } from "../../api/shared/stringifyArray";
 
 // type _TperSingleRes = `TperHellobus: ${string} ${| "Previsto"
 //     | "DaSatellite"} ${number}:${number}`;
@@ -34,6 +36,14 @@ interface AllBusLd {
     livello: "basso" | "medio" | "alto";
 }
 
+interface DataVersion {
+    stops: string;
+}
+
+interface TempStops {
+    [stopId: string]: Stop;
+}
+
 export class Tper implements Base {
     public static agency: Agency = {
         lang: "it",
@@ -48,7 +58,163 @@ export class Tper implements Base {
     private static _stops: Stop[] | null = null;
     private static _lastStopReadDate: moment.Moment | null = null;
 
+    private static _lastUpdateCheckDate: moment.Moment | null = null;
+    private static _isUpdatingStops = false;
+
+    private static async _updateStopsData() {
+        if (
+            Tper._lastUpdateCheckDate &&
+            moment().diff(Tper._lastUpdateCheckDate, "hours") <= 3
+        ) {
+            logger.debug(
+                "TPER stop data already checked at " +
+                    Tper._lastUpdateCheckDate
+                        .tz("Europe/Rome")
+                        .format("DD/MM/YYYY HH:mm:ss")
+            );
+            return;
+        } else if (Tper._isUpdatingStops) {
+            logger.warn("TPER not updating stops: already updating...");
+            return;
+        }
+
+        Tper._isUpdatingStops = true;
+
+        let lastVersion;
+        let cachedVersion;
+        let cachedFile: DataVersion | null = null;
+
+        try {
+            // fetch current version
+            const { data } = await this._instance.get(
+                "https://solwsweb.tper.it/web-services/open-data.asmx/OpenDataVersione"
+            );
+
+            const obj = await parseStringPromise(data);
+
+            lastVersion = moment(
+                obj.DataSet["diffgr:diffgram"][0].NewDataSet[0].Table.find(
+                    (e: any) => e.nome_file.includes("lineefermate")
+                ).versione[0],
+                "YYYYMMDD"
+            );
+
+            logger.debug(
+                "TPER data last version is " +
+                    lastVersion.tz("Europe/Rome").format("DD/MM/YYYY")
+            );
+        } catch (err) {
+            logger.error("Error while fetching TPER last data version");
+            logger.error(err);
+            Tper._isUpdatingStops = false;
+            return;
+        }
+
+        const dataVersionPath = join(
+            settings.agencyFilesPath,
+            "./tper/dataVersion.json"
+        );
+
+        try {
+            // get cached version
+            const readFilePromise = promisify(readFile);
+
+            cachedFile = JSON.parse(
+                await readFilePromise(dataVersionPath, {
+                    encoding: "utf-8"
+                })
+            );
+
+            cachedVersion = moment.unix(parseInt(cachedFile?.stops as string));
+            if (!moment.isMoment(cachedVersion))
+                throw new Error("Invalid unix date");
+
+            logger.debug(
+                "TPER data cached version is " +
+                    cachedVersion.tz("Europe/Rome").format("DD/MM/YYYY")
+            );
+        } catch (err) {
+            logger.warn("Invalid TPER dataVersion.json file, creating one");
+            logger.warn(err);
+        }
+
+        if (cachedVersion && cachedVersion.isSame(lastVersion)) {
+            logger.debug("TPER stop data is already the latest");
+            Tper._isUpdatingStops = false;
+            return;
+        }
+
+        logger.info("Updating TPER stops to latest...");
+
+        try {
+            const { data } = await this._instance.get(
+                "https://solwsweb.tper.it/web-services/open-data.asmx/OpenDataLineeFermate"
+            );
+
+            logger.debug("Fetched TPER new stops data");
+
+            const obj = await parseStringPromise(data);
+
+            const raw = obj.DataSet[
+                "diffgr:diffgram"
+            ][0].NewDataSet[0].Table.map((e: any) => ({
+                stopId: e.codice_fermata[0],
+                stopName: e.denominazione[0],
+                routes: e.codice_linea, // keep as array
+                coordX: parseFloat(e.coordinata_x[0]),
+                coordY: parseFloat(e.coordinata_y[0]),
+                lat: parseInt(e.latitudine[0]),
+                lon: parseInt(e.longitudine[0]),
+                zone: parseInt(e.codice_zona[0])
+            })) as any[];
+
+            const stops: TempStops = {};
+
+            for (let i = 0; i < raw.length; i++) {
+                const { stopId } = raw[i];
+                if (stopId in stops) {
+                    if (!stops[stopId].routes) {
+                        logger.error(
+                            "Error while updating TPER stops: no routes array"
+                        );
+                    }
+                    stops[stopId].routes?.push(raw[i].routes[0]);
+                } else {
+                    stops[stopId] = raw[i];
+                }
+            }
+
+            const writeFilePromise = promisify(writeFile);
+
+            await writeFilePromise(
+                join(settings.agencyFilesPath, "./tper/stops.json"),
+                stringifyArray(Object.values(stops))
+            );
+
+            const updatedFile: DataVersion = cachedFile || ({} as any);
+            updatedFile.stops = lastVersion.unix().toString();
+
+            await writeFilePromise(
+                join(settings.agencyFilesPath, "./tper/dataVersion.json"),
+                JSON.stringify(updatedFile, null, 4)
+            );
+        } catch (err) {
+            logger.error("Error while updating TPER stops file");
+            logger.error(err);
+            Tper._isUpdatingStops = false;
+            return;
+        }
+
+        Tper._lastUpdateCheckDate = moment();
+
+        logger.info("TPER stop data have been updated");
+        Tper._isUpdatingStops = false;
+    }
+
     static get stops(): Stop[] {
+        // DEBUG
+        this._updateStopsData();
+
         if (
             !Tper._stops ||
             !Tper._lastStopReadDate ||
