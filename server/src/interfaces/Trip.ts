@@ -50,11 +50,11 @@
  *            example: 3
  *          scheduledArrival:
  *            type: integer
- *            description: Scheduled arrival time in epoch timestamp
+ *            description: INVALID IF -1 - Scheduled arrival time in epoch timestamp
  *            example: 1640696160
  *          scheduledDeparture:
  *            type: integer
- *            description: Scheduled arrival time in epoch timestamp
+ *            description: INVALID IF -1 - Scheduled arrival time in epoch timestamp
  *            example: 1640696160
  *          scheduleRelationship:
  *            type: string
@@ -108,8 +108,8 @@ export interface Trip {
     shortName: string; // Route number
     longName: string; // Route destination
     vehicleType: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12; // See route_type in https://developers.google.com/transit/gtfs/reference#routestxt
-    scheduledArrival: number; // UNIX Timestamp - can be the same as arrivalTime
-    scheduledDeparture: number; // UNIX Timestamp - can be the same as departureTime
+    scheduledArrival: number; // INVALID IF -1 - UNIX Timestamp - can be the same as arrivalTime
+    scheduledDeparture: number; // INVALID IF -1 - UNIX Timestamp - can be the same as departureTime
     scheduleRelationship: "SCHEDULED" | "SKIPPED" | "NO_DATA"; // See https://developers.google.com/transit/gtfs-realtime/reference#enum-schedulerelationship
     realtimeArrival: number; // UNIX Timestamp - can be the same as arrivalTime
     realtimeDeparture: number; // UNIX Timestamp - can be the same as departureTime

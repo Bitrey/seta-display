@@ -233,8 +233,10 @@ export class Tper implements Base {
                                 longName: "",
                                 realtimeArrival: time,
                                 realtimeDeparture: time,
-                                scheduledArrival: time,
-                                scheduledDeparture: time,
+                                scheduledArrival:
+                                    s[1] === "Previsto" ? time : -1,
+                                scheduledDeparture:
+                                    s[1] === "Previsto" ? time : -1,
                                 vehicleType: 3,
                                 scheduleRelationship:
                                     s[1] === "Previsto"

@@ -2,11 +2,16 @@ import React from "react";
 import moment from "moment-timezone";
 
 const Trip = ({ i, t }) => {
+    const arrival = moment
+        .unix(t.realtimeDeparture || t.scheduledDeparture)
+        .diff(moment(), "m");
     const delay =
-        t.scheduleRelationship === "SCHEDULED" &&
-        moment
-            .unix(t.realtimeDeparture)
-            .diff(moment.unix(t.scheduledDeparture), "minutes");
+        t.scheduledDeparture?.toString() !== "-1" &&
+        t.scheduleRelationship === "SCHEDULED"
+            ? moment
+                  .unix(t.realtimeDeparture)
+                  .diff(moment.unix(t.scheduledDeparture), "minutes")
+            : null;
 
     return (
         <div
@@ -28,11 +33,20 @@ const Trip = ({ i, t }) => {
             <p className="w-full whitespace-nowrap overflow-hidden text-lg col-span-3 max-w-[fit-content] overflow-ellipsis">
                 {t.longName}
             </p>
-            <p className="font-semibold text-lg">
-                {moment
-                    .unix(t.realtimeDeparture || t.scheduledDeparture)
-                    .diff(moment(), "m") + "m"}
-                {t.scheduleRelationship !== "SCHEDULED" && "*"}
+            <p className="font-semibold text-lg flex items-center">
+                {arrival > 60
+                    ? `${Math.floor(arrival / 60)}h ${arrival % 60}m`
+                    : `${arrival}m`}
+                {t.scheduleRelationship === "SCHEDULED" ? (
+                    <img
+                        src="/img/realtime.gif"
+                        alt="Realtime"
+                        loading="lazy"
+                        className="w-4 h-4 p-0 mt-1 m-0 mr-1 transform rotate-45"
+                    />
+                ) : (
+                    "*"
+                )}
             </p>
             <p className="text-lg">
                 {delay ? (delay > 0 ? "+" + delay : delay) + "m" : "-"}

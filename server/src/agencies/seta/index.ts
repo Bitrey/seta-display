@@ -255,6 +255,21 @@ export class Seta implements Base {
         res.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
 
         for (let i = 0; i < res.length; i++) {
+            if (res[i].scheduleRelationship === "SCHEDULED") {
+                // buses that are earlier than 15 minutes probably have a wrong scheduledDeparture time
+                if (
+                    moment
+                        .unix(res[i].realtimeDeparture)
+                        .diff(
+                            moment.unix(res[i].scheduledDeparture),
+                            "minutes"
+                        ) < -15
+                ) {
+                    res[i].scheduledArrival = -1;
+                    res[i].scheduledDeparture = -1;
+                }
+            }
+
             for (const key in res[i]) {
                 const _k = key as keyof typeof res[typeof i];
                 if (res[i][_k] === undefined) delete res[i][_k];
