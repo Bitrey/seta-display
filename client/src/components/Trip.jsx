@@ -11,12 +11,7 @@ const Trip = ({ i, t }) => {
             ? moment
                   .unix(t.realtimeDeparture)
                   .diff(moment.unix(t.scheduledDeparture), "minutes")
-            : (console.log(
-                  "dio boia",
-                  t.scheduledDeparture.toString(),
-                  t.scheduleRelationship
-              ),
-              null);
+            : null;
 
     return (
         <div
@@ -54,7 +49,9 @@ const Trip = ({ i, t }) => {
                 )}
             </p>
             <p className="text-lg">
-                {delay ? (delay > 0 ? "+" + delay : delay) + "m" : "-"}
+                {Number.isInteger(delay)
+                    ? (delay > 0 ? "+" + delay : delay) + "m"
+                    : "-"}
             </p>
         </div>
     );
