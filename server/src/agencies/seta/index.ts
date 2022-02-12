@@ -132,6 +132,8 @@ export class Seta implements Base {
 
     public static getTrips: tripFn = async (stop, maxResults) => {
         let data: _SetaRes;
+        const currentMoment = Base.getTime();
+
         try {
             data = (await this._instance.post("/" + stop.stopId)).data;
             logger.debug(`SETA data fetched for stop ${stop.stopId}`);
@@ -180,6 +182,12 @@ export class Seta implements Base {
         }
 
         const res: Trip[] = [];
+
+        // PRIMA REALTIME, POI PLANNED
+        services.sort((a, b) => (a.type > b.type ? 1 : -1));
+
+        console.log(services);
+
         for (const e of services) {
             const i = res.findIndex(m => m.tripId === e.codice_corsa);
 
@@ -196,7 +204,7 @@ export class Seta implements Base {
             }
 
             const _t = moment.tz(
-                `${moment().tz("Europe/Rome").format("L")} ${e.arrival}`,
+                `${currentMoment.tz("Europe/Rome").format("L")} ${e.arrival}`,
                 "L HH:mm",
                 "Europe/Rome"
             );
@@ -241,20 +249,29 @@ export class Seta implements Base {
                 // additionalInfo: undefined
                 backgroundColor: e.serviceType === "EX" ? "#1267B7" : "#FFC100",
                 textColor: "#FFFFFF",
-                minTillArrival: _t.diff(moment().tz("Europe/Rome"), "minutes")
+                minTillArrival: _t.diff(
+                    currentMoment.tz("Europe/Rome"),
+                    "minutes"
+                )
             };
 
-            if (
-                trip.realtimeArrival >= Base.getTime().unix() &&
-                trip.minTillArrival &&
-                trip.minTillArrival > 0
-            ) {
-                res.push(trip);
-            }
+            res.push(trip);
         }
         res.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
 
+        console.log(res);
+
         for (let i = 0; i < res.length; i++) {
+            // Remove trips that have already passed
+            if (
+                !Number.isInteger(res[i].minTillArrival) ||
+                (res[i].minTillArrival as number) < 0
+            ) {
+                res.splice(i, 1);
+                i--;
+                continue;
+            }
+
             if (res[i].scheduleRelationship === "SCHEDULED") {
                 // buses that are earlier than 15 minutes probably have a wrong scheduledDeparture time
                 if (

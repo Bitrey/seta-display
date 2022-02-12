@@ -411,7 +411,10 @@ export class Tper implements Base {
                                 vehicleCode: busNum,
                                 minTillArrival: _t.diff(moment(), "minutes")
                             };
-                            if (t.minTillArrival && t.minTillArrival < 0) {
+                            if (
+                                Number.isInteger(t.minTillArrival) &&
+                                (t.minTillArrival as number) < 0
+                            ) {
                                 return;
                             }
                             noTrips = false;
