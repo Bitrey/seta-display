@@ -2,9 +2,13 @@ import React from "react";
 import moment from "moment-timezone";
 
 const Trip = ({ i, t }) => {
+    // ignore current seconds, so get current date without seconds then parse it
     const arrival = moment
         .unix(t.realtimeDeparture || t.scheduledDeparture)
-        .diff(moment(), "m");
+        .diff(
+            moment(moment().format("YYYY-MM-DD HH:mm"), "YYYY-MM-DD HH:mm"),
+            "m"
+        );
     const delay =
         t.scheduledDeparture?.toString() !== "-1" &&
         t.scheduleRelationship === "SCHEDULED"
