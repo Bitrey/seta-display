@@ -130,13 +130,13 @@ export class Seta implements Base {
         return news;
     };
 
-    public static getTrips: tripFn = async (stop, maxResults) => {
+    public static getTrips: tripFn = async stopId => {
         let data: _SetaRes;
         const currentMoment = Base.getTime();
 
         try {
-            data = (await this._instance.post("/" + stop.stopId)).data;
-            logger.debug(`SETA data fetched for stop ${stop.stopId}`);
+            data = (await this._instance.post("/" + stopId)).data;
+            logger.debug(`SETA data fetched for stop ${stopId}`);
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 logger.debug("SETA data axios error:");
@@ -144,7 +144,7 @@ export class Seta implements Base {
 
                 data = err.response?.data || {
                     arrival: {
-                        waypont: stop.stopId,
+                        waypont: stopId,
                         error: "no arrivals scheduled in next 90 minutes"
                     }
                 };
@@ -153,7 +153,7 @@ export class Seta implements Base {
                 logger.error(err);
                 data = {
                     arrival: {
-                        waypont: stop.stopId,
+                        waypont: stopId,
                         error: "no arrivals scheduled in next 90 minutes"
                     }
                 };
@@ -186,7 +186,7 @@ export class Seta implements Base {
         // PRIMA REALTIME, POI PLANNED
         services.sort((a, b) => (a.type > b.type ? 1 : -1));
 
-        console.log(services);
+        // console.log(services);
 
         for (const e of services) {
             const i = res.findIndex(m => m.tripId === e.codice_corsa);
@@ -226,7 +226,7 @@ export class Seta implements Base {
                     e.type === "realtime" ? "SCHEDULED" : "NO_DATA",
                 realtimeArrival: t,
                 realtimeDeparture: t,
-                platform: stop.platform,
+                // platform: stop.platform,
                 occupancyStatus: r
                     ? r < 0.1
                         ? "EMPTY"
@@ -259,7 +259,7 @@ export class Seta implements Base {
         }
         res.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
 
-        console.log(res);
+        // console.log(res);
 
         for (let i = 0; i < res.length; i++) {
             // Remove trips that have already passed
@@ -293,7 +293,7 @@ export class Seta implements Base {
             }
         }
 
-        return maxResults ? res.slice(0, maxResults) : res;
+        return res;
     };
 }
 

@@ -43,7 +43,7 @@ export const tripsService = async ({
         const tripsToBeCached: _TripsToBeCached = {};
 
         let stopsNotFound = [];
-        const p: [stop: Stop, trips: Promise<tripFnReturn>][] = [];
+        const p: [stopId: string, trips: Promise<tripFnReturn>][] = [];
 
         for (const agency of agencies) {
             const Cls = require(join(settings.agenciesPath, agency))
@@ -60,21 +60,22 @@ export const tripsService = async ({
                             " not found"
                     );
                     stopsNotFound.push(_stopId);
-                    continue;
+                    // DEBUG - IGNORE IF STOP NOT FOUND
+                    // continue;
                 }
-                tripsToBeCached[s.stopId] = [];
-                p.push([s, Cls.getTrips(s, 10)]);
+                tripsToBeCached[_stopId] = [];
+                p.push([_stopId, Cls.getTrips(_stopId)]);
             }
         }
         const tripReturns = await Promise.all(p.map(e => e[1]));
 
         for (const [i, t] of tripReturns.entries()) {
-            const stopId = p[i][0].stopId;
+            const stopId = p[i][0];
 
             if (isFnErr(t)) {
                 errs.add(t.err);
                 if (t.err.status >= 400) {
-                    // Rrror, trips were not fetched
+                    // Error, trips were not fetched
                     delete tripsToBeCached[stopId];
                 }
             } else {
@@ -84,20 +85,20 @@ export const tripsService = async ({
             }
         }
 
-        if (stopsNotFound.length > 0) {
-            const _s: string[] = [];
-            for (const s of stopsNotFound) {
-                if (
-                    stopsNotFound.filter(e => e === s).length ===
-                    agencies.length
-                ) {
-                    _s.push(s);
-                }
-            }
-            if (_s.length > 0) {
-                throw new ReferenceError([...new Set(_s)].join(", "));
-            }
-        }
+        // if (stopsNotFound.length > 0) {
+        //     const _s: string[] = [];
+        //     for (const s of stopsNotFound) {
+        //         if (
+        //             stopsNotFound.filter(e => e === s).length ===
+        //             agencies.length
+        //         ) {
+        //             _s.push(s);
+        //         }
+        //     }
+        //     if (_s.length > 0) {
+        //         throw new ReferenceError([...new Set(_s)].join(", "));
+        //     }
+        // }
 
         if (Object.keys(tripsToBeCached).length > 0) {
             logger.debug(

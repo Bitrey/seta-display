@@ -16,6 +16,7 @@ import { News } from "../../interfaces/News";
 import { settings } from "../../settings";
 import { promisify } from "util";
 import { stringifyArray } from "../../api/shared/stringifyArray";
+import { FnErr, isFnErr } from "../../interfaces/FnErr";
 
 // type _TperSingleRes = `TperHellobus: ${string} ${| "Previsto"
 //     | "DaSatellite"} ${number}:${number}`;
@@ -42,6 +43,11 @@ interface DataVersion {
 
 interface TempStops {
     [stopId: string]: Stop;
+}
+
+interface PassengerLevel {
+    busCode: string;
+    level: "MANY_SEATS_AVAILABLE" | "FEW_SEATS_AVAILABLE" | "FULL";
 }
 
 export class Tper implements Base {
@@ -293,187 +299,289 @@ export class Tper implements Base {
         return news;
     };
 
-    public static getTrips: tripFn = async (stop, maxResults) => {
+    private static async _getTripsForRoute(
+        stopId: string,
+        route?: string
+    ): Promise<Trip[] | FnErr> {
         let trips: Trip[] | null = null;
         let rawData: any;
-        if (!stop.routes) {
-            logger.error("TPER stop.routes not defined");
-            return { err: { msg: "Error while loading data", status: 500 } };
+
+        let res;
+        try {
+            res = await this._instance.get("/QueryHellobus", {
+                params: {
+                    fermata: stopId,
+                    linea: route || " ",
+                    oraHHMM: " "
+                }
+            });
+            logger.debug(
+                `TPER fetching data for stop ${stopId} - line ${route}`
+            );
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                logger.debug("TPER data axios error:");
+                logger.debug(err.response?.data || err.response || err.code);
+                // DEBUG - MAP ERROR!!
+
+                // data = err.response?.data || "Unknown error";
+            } else {
+                logger.error("TPER data unknown error:");
+                logger.error(err);
+
+                // data = "Unknown error";
+            }
+            return {
+                err: { msg: "Error while fetching stop", status: 500 }
+            } as FnErr;
         }
 
+        let noTrips = true;
+
+        rawData = res.data;
+        // console.log(rawData);
+
+        if (!rawData) {
+            logger.error("TPER rawData is falsy");
+            return {
+                err: { msg: "Error while loading data", status: 500 }
+            };
+        }
         try {
-            const responses: (AxiosResponse<string> | Error)[] =
-                await Promise.all(
-                    stop.routes.map(route => {
-                        const res = this._instance
-                            .get("/QueryHellobus", {
-                                params: {
-                                    fermata: stop.stopId,
-                                    linea: route,
-                                    oraHHMM: " "
-                                }
-                            })
-                            .catch(err => {
-                                if (axios.isAxiosError(err)) {
-                                    logger.debug("TPER data axios error:");
-                                    logger.debug(
-                                        err.response?.data ||
-                                            err.response ||
-                                            err.code
-                                    );
-
-                                    // data = err.response?.data || "Unknown error";
-                                } else {
-                                    logger.error("TPER data unknown error:");
-                                    logger.error(err);
-
-                                    // data = "Unknown error";
-                                }
-                                return err as Error;
-                            });
-                        logger.debug(
-                            `TPER data fetched for stop ${stop.stopId} - line ${route}`
-                        );
-                        return res;
-                    })
-                );
-
-            let noTrips = true;
-            for (const res of responses) {
-                if (res instanceof Error) continue;
-                rawData = res.data;
-                // console.log(rawData);
-
-                if (!rawData) {
-                    logger.error("TPER rawData is falsy");
-                    return {
-                        err: { msg: "Error while loading data", status: 500 }
-                    };
-                }
-                try {
-                    const xmlData: any = await parseStringPromise(rawData);
-                    let str: string = xmlData.string._;
-                    if (str.startsWith("TperHellobus: "))
-                        str = str.substring(14);
-                    else if (str.includes("ERR_TOO_MANY_REQUESTS_LOCK"))
-                        throw new Error("TperHellobus requests limit reached");
-                    else if (str.includes("SERVICE FAILURE"))
-                        throw new Error("TperHellobus service failed");
-                    else
-                        throw new Error(
-                            `Invalid TperHellobus response: ${str}`
-                        );
-                    if (str.includes("OGGI NESSUNA ALTRA CORSA DI")) continue;
-
-                    trips = str
-                        .split(", ")
-                        .map(e => {
-                            const s = e.split(" ");
-                            const _t = moment.tz(
-                                `${moment().tz("Europe/Rome").format("L")} ${
-                                    s[2]
-                                }`,
-                                "L HH:mm",
-                                "Europe/Rome"
-                            );
-                            const busNumIndex = e.search(
-                                /\(Bus[0-9]+ CON PEDANA\)/g
-                            );
-                            let busNum: string | undefined = undefined;
-                            if (busNumIndex !== -1) {
-                                const s1 = e.substring(busNumIndex);
-                                const sIndex = s1.search(/[0-9]+/g);
-                                if (sIndex === -1) {
-                                    logger.error(
-                                        "Invalid TPER s2 string format"
-                                    );
-                                    return;
-                                }
-                                busNum = s1.substring(sIndex)?.split(" ")[0];
-                            }
-                            const time = _t.unix();
-                            const t: Trip = {
-                                agencyName: this.agency.name,
-                                logoUrl: this.agency.logoUrl,
-                                shortName: s[0],
-                                longName: "",
-                                realtimeArrival: time,
-                                realtimeDeparture: time,
-                                scheduledArrival:
-                                    s[1] === "Previsto" ? time : -1,
-                                scheduledDeparture:
-                                    s[1] === "Previsto" ? time : -1,
-                                vehicleType: 3,
-                                scheduleRelationship:
-                                    s[1] === "Previsto"
-                                        ? "NO_DATA"
-                                        : "SCHEDULED",
-                                vehicleCode: busNum,
-                                minTillArrival: _t.diff(moment(), "minutes")
-                            };
-                            if (
-                                Number.isInteger(t.minTillArrival) &&
-                                (t.minTillArrival as number) < 0
-                            ) {
-                                return;
-                            }
-                            noTrips = false;
-                            return t as any;
-                        })
-                        .filter(e => !!e);
-                } catch (err) {
-                    logger.error("Error while fetching TPER routes");
-                    logger.error(err);
-                    return {
-                        err: { msg: "Error while loading data", status: 500 }
-                    };
-                }
-            }
-
-            if (!trips) {
-                logger.debug("TPER no trips");
-                if (noTrips) {
-                    return {
-                        err: {
-                            msg: "No more trips planned for today",
-                            status: 200
-                        }
-                    };
-                } else {
-                    return {
-                        err: { msg: "Error while loading data", status: 500 }
-                    };
-                }
-            }
-
-            try {
-                const { data } = await this._instance.get("/QueryAllBusLd");
-                const xmlData: any = await parseStringPromise(data);
-                const arr: AllBusLd[] = JSON.parse(xmlData.string._).AllBusLd;
-                const v = trips.map(t => t.vehicleCode);
-                arr.forEach(e => {
-                    if (v.includes(e.matricola)) {
-                        const i = trips?.findIndex(
-                            t => t.vehicleCode === e.matricola
-                        );
-                        if (!trips || !i || i === -1) {
-                            logger.error("i -1 in TPER QueryAllBusLd");
-                        } else {
-                            trips[i].occupancyStatus =
-                                e.livello === "basso"
-                                    ? "MANY_SEATS_AVAILABLE"
-                                    : e.livello === "medio"
-                                    ? "FEW_SEATS_AVAILABLE"
-                                    : "FULL";
-                        }
+            const xmlData: any = await parseStringPromise(rawData);
+            let str: string = xmlData.string._;
+            if (str.startsWith("TperHellobus: ")) str = str.substring(14);
+            else if (str.includes("ERR_TOO_MANY_REQUESTS_LOCK"))
+                return {
+                    err: {
+                        msg: "TperHellobus requests limit reached",
+                        status: 500
                     }
-                });
-            } catch (err) {
+                } as FnErr;
+            else if (str.includes("SERVICE FAILURE"))
+                return {
+                    err: { msg: "TperHellobus service failed", status: 500 }
+                } as FnErr;
+            else if (/FERMATA [0-9]+ NON GESTITA/g.test(str)) {
+                return {
+                    err: { msg: `Stop ${stopId} is unknown`, status: 200 }
+                } as FnErr;
+            } else
+                return {
+                    err: {
+                        msg: `Invalid TperHellobus response: ${str}`,
+                        status: 500
+                    }
+                } as FnErr;
+
+            if (str.includes("OGGI NESSUNA ALTRA CORSA DI"))
+                return [] as Trip[];
+
+            trips = str
+                .split(", ")
+                .map(e => {
+                    const s = e.split(" ");
+                    const _t = moment.tz(
+                        `${moment().tz("Europe/Rome").format("L")} ${s[2]}`,
+                        "L HH:mm",
+                        "Europe/Rome"
+                    );
+                    const busNumIndex = e.search(/\(Bus[0-9]+ CON PEDANA\)/g);
+                    let busNum: string | undefined = undefined;
+                    if (busNumIndex !== -1) {
+                        const s1 = e.substring(busNumIndex);
+                        const sIndex = s1.search(/[0-9]+/g);
+                        if (sIndex === -1) {
+                            logger.error("Invalid TPER s2 string format");
+                            return;
+                        }
+                        busNum = s1.substring(sIndex)?.split(" ")[0];
+                    }
+                    const time = _t.unix();
+                    const t: Trip = {
+                        agencyName: this.agency.name,
+                        logoUrl: this.agency.logoUrl,
+                        shortName: s[0],
+                        longName: "",
+                        realtimeArrival: time,
+                        realtimeDeparture: time,
+                        scheduledArrival: s[1] === "Previsto" ? time : -1,
+                        scheduledDeparture: s[1] === "Previsto" ? time : -1,
+                        vehicleType: 3,
+                        scheduleRelationship:
+                            s[1] === "Previsto" ? "NO_DATA" : "SCHEDULED",
+                        vehicleCode: busNum,
+                        minTillArrival: _t.diff(moment(), "minutes")
+                    };
+                    if (
+                        Number.isInteger(t.minTillArrival) &&
+                        (t.minTillArrival as number) < 0
+                    ) {
+                        return;
+                    }
+                    noTrips = false;
+                    return t as any;
+                })
+                .filter(e => !!e);
+        } catch (err) {
+            logger.error("Error while fetching TPER routes");
+            logger.error(err);
+            return {
+                err: { msg: "Error while loading data", status: 500 }
+            };
+        }
+
+        if (!trips) {
+            logger.debug("TPER no trips");
+            if (noTrips) {
+                return {
+                    err: {
+                        msg: "No more trips planned for today",
+                        status: 200
+                    }
+                };
+            } else {
+                return {
+                    err: { msg: "Error while loading data", status: 500 }
+                };
+            }
+        }
+
+        trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
+
+        for (let i = 0; i < trips.length; i++) {
+            for (const key in trips[i]) {
+                const _k = key as keyof typeof trips[typeof i];
+                if (trips[i][_k] === undefined) delete trips[i][_k];
+            }
+        }
+
+        return trips;
+        // } catch (err) {
+        //     logger.error(err);
+        //     return { err: { msg: "Error while loading data", status: 500 } };
+        // }
+    }
+
+    private static async _getPassengerLevel(): Promise<
+        FnErr | PassengerLevel[]
+    > {
+        try {
+            const { data } = await this._instance.get("/QueryAllBusLd");
+            const xmlData: any = await parseStringPromise(data);
+            const arr: AllBusLd[] = JSON.parse(xmlData.string._).AllBusLd;
+            return arr.map(
+                e =>
+                    ({
+                        busCode: e.matricola,
+                        level:
+                            e.livello === "basso"
+                                ? "MANY_SEATS_AVAILABLE"
+                                : e.livello === "medio"
+                                ? "FEW_SEATS_AVAILABLE"
+                                : "FULL"
+                    } as PassengerLevel)
+            );
+        } catch (err) {
+            logger.warn("TPER error while fetching passenger level");
+            if (axios.isAxiosError(err)) {
+                logger.warn(err.response?.data || err);
+            } else {
                 logger.error(err);
+            }
+            return {
+                err: {
+                    msg: "TPER error while fetching passenger level",
+                    status: 500
+                }
+            } as FnErr;
+        }
+    }
+
+    public static getTrips: tripFn = async stopId => {
+        try {
+            let routes: string[];
+            const trips: Trip[] = [];
+
+            // check if stop and routes are known
+            const stop = Tper.stops.find(s => s.stopId === stopId);
+            if (stop?.routes) {
+                // routes are known from stops file
+                routes = stop.routes;
+            } else {
+                // if routes are not known, load them from a first fetch
+                const _tempTrips = await Tper._getTripsForRoute(stopId);
+                if (isFnErr(_tempTrips)) {
+                    if (_tempTrips.err.status >= 400) {
+                        // error while loading routes
+                        logger.debug("TPER error while loading _tempTrips");
+                        return _tempTrips;
+                    } else {
+                        // probably stop not found but everything ok
+                        logger.debug(
+                            `TPER _tempTrips status code < 400 for stopId "${stopId}"`
+                        );
+                    }
+                }
+
+                routes = !isFnErr(_tempTrips)
+                    ? [...new Set(_tempTrips.map(t => t.shortName))]
+                    : [];
+
+                logger.debug(
+                    `TPER unknown stop "${stopId}", fetched routes: "${routes.join(
+                        '", "'
+                    )}"`
+                );
+            }
+
+            const errors: FnErr[] = [];
+
+            // If routes is empty, fetch trips with no route specified
+            for (const route of routes.length > 0 ? routes : [undefined]) {
+                const t = await Tper._getTripsForRoute(stopId, route);
+                if (isFnErr(t)) errors.push(t);
+                else trips.push(...t);
+            }
+
+            const unacceptableErrors = errors.filter(e => e.err.status >= 400);
+            if (unacceptableErrors.length > 0 || trips.length === 0) {
+                return {
+                    err: {
+                        msg:
+                            [
+                                ...new Set(
+                                    unacceptableErrors.map(e => e.err.msg)
+                                )
+                            ].join(", ") ||
+                            [...new Set(errors.map(e => e.err.msg))].join(", "),
+                        status: Math.max(...errors.map(e => e.err.status))
+                    }
+                } as FnErr;
+            }
+
+            const passengerLevel = await Tper._getPassengerLevel();
+
+            // fill passenger level
+            if (!isFnErr(passengerLevel)) {
+                const busCodes = passengerLevel.map(e => e.busCode);
+                for (let i = 0; i < trips.length; i++) {
+                    const { vehicleCode } = trips[i];
+                    if (!vehicleCode || !busCodes.includes(vehicleCode)) {
+                        continue;
+                    }
+
+                    const occupancyStatus = passengerLevel.find(
+                        p => p.busCode === vehicleCode
+                    );
+                    if (!occupancyStatus) continue;
+                    trips[i].occupancyStatus = occupancyStatus.level;
+                }
             }
 
             trips.sort((a, b) => a.realtimeArrival - b.realtimeDeparture);
 
+            // delete undefined keys
             for (let i = 0; i < trips.length; i++) {
                 for (const key in trips[i]) {
                     const _k = key as keyof typeof trips[typeof i];
@@ -482,9 +590,16 @@ export class Tper implements Base {
             }
 
             return trips;
+            // } catch (err) {
+            //     logger.error(err);
+            //     return { err: { msg: "Error while loading data", status: 500 } };
+            // }
         } catch (err) {
+            logger.error("TPER error while fetching trips");
             logger.error(err);
-            return { err: { msg: "Error while loading data", status: 500 } };
+            return {
+                err: { msg: "Error while fetching trips", status: 500 }
+            } as FnErr;
         }
     };
 }
