@@ -47,8 +47,7 @@ interface _SetaRes {
 export class Seta implements Base {
     public static agency: Agency = {
         lang: "it",
-        logoUrl:
-            "https://www.dropbox.com/s/nk987x28t7u7dqc/logo_seta_bacino.png?raw=1",
+        logoUrl: "/img/seta.png",
         name: "SETA spa",
         timezone: "Europe/Rome",
         phone: "059 416711",

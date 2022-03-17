@@ -53,8 +53,7 @@ interface PassengerLevel {
 export class Tper implements Base {
     public static agency: Agency = {
         lang: "it",
-        logoUrl:
-            "https://www.dropbox.com/s/hjggo1pftqyyf3c/logo_TPER_0.png?raw=1",
+        logoUrl: "/img/tper.png",
         name: "TPER spa",
         timezone: "Europe/Rome",
         phone: "051 290290",
